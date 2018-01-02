@@ -1,0 +1,86 @@
+#!/usr/bin/perl -w
+### 
+### Copyright (c)   BerryGenomics-2016
+### Writer:         chaijingchao <chaijingchao561@berrygenomics.com>
+### Program Date:   2016.08.06
+
+#!/usr/bin/perl
+use warnings;
+use strict;
+use FindBin qw ($Bin);
+use Getopt::Long;
+use Config::Std;
+
+my $usage =
+"
+Usage:
+
+  Options:
+
+  -h                               Help
+  -output_dir              <str>   Output_dir.
+  -prefix                  <str>   The prefix of out, (Species Name. etc).
+For example:
+        perl $0 -output_dir ./ -prefix mouse";
+
+my($output_dir, $prefix, $config, $RSEM_DIR, $CD_HIT_dir, $fpkm_dirs, $help);
+GetOptions(
+        "output_dir=s" => \$output_dir,
+        "prefix=s" => \$prefix,
+        "h|help"=>\$help
+);
+if(!$output_dir || !$prefix || $help){
+        die "$usage\n";
+}
+$config = "$output_dir/project.cfg";
+read_config $config => my %config;
+my $Sample = $config{Sample};
+my $Clean_data = $config{Clean_data};
+my $Group = $config{Group};
+
+$RSEM_DIR = "/share/public/software/trinity/trinityrnaseq_r20140717/trinity-plugins/rsem";
+$CD_HIT_dir = "/share/public/software/CD-HIT/cd-hit-v4.6.1-2012-08-27";
+
+system("mkdir $output_dir/Expression") unless (-e "$output_dir/Expression");
+system("mkdir $output_dir/Expression/tmp") unless (-e "$output_dir/Expression/tmp");
+open SH,">$output_dir/Expression/cat_prepare.sh";
+print SH "echo ===start at : `date` ===\n";
+print SH "cat $output_dir/Annotation/*/Result/Transcripts.fa.GO.list.xls > $output_dir/Diff/$prefix.Transcripts.fa.GO.list.xls && \\\n";
+print SH "cat $output_dir/Annotation/*/Result/Transcripts.fa.KEGG.blast.xls > $output_dir/Diff/$prefix.Transcripts.fa.KEGG.blast.xls && \\\n";
+print SH "$RSEM_DIR/rsem-prepare-reference --bowtie2 --bowtie2-path /share/public/software/bowtie2/bowtie2-2.1.0/ --no-polyA $output_dir/Cluster/ref.fa  $output_dir/Expression/tmp/$prefix && \\\n";
+print SH "echo \" Prepare_finish\" >Prepare.mark || touch $output_dir/Expression/prepare_failed\n";
+print SH "echo ===end at : `date` ===\n";
+close SH;
+
+my @sample_iso = split /,/,$Sample ->{sample_ila};
+for my $each (@sample_iso){
+        system("mkdir $output_dir/Expression/$each") unless (-e "$output_dir/Expression/$each");
+        open SH,">$output_dir/Expression/$each/expression_$each.sh";
+        my @short_reads = split /\t/,$Clean_data ->{$each};
+        print SH "echo ===start at : `date` ===\n";
+        print SH "perl $Bin/runRSEM_v3.pl -a $output_dir/Cluster/ref.fa -r $short_reads[0],$short_reads[1] -n $prefix -s $each -ss 0.5 -tmp $output_dir/Expression/tmp && \\\n";
+#        print SH "$RSEM_DIR/rsem-calculate-expression -p 8 --paired-end --bowtie2 --estimate-rspd $short_reads[0] $short_reads[1] $output_dir/Expression/$prefix $each && \\\n";
+#        print SH "awk '{print \$1 \"\\t\" \$3 \"\\t\" \$5 \"\\t\" \$7}' $output_dir/Expression/$each/$each.isoforms.results>$output_dir/Expression/$each/${each}_TranscriptExp.xls && \\\n";
+#        print SH "$Bin/bam2map_stat $each $output_dir/Expression/$each/$each\.transcript.bam pe $output_dir/Expression/$each/$each\.mapped.stat.xls && \\\n";
+#        print SH "$Bin/RSEM_result --sample $each --indir $output_dir/Expression/$each --outdir $output_dir/Expression/$each && \\\n";
+        print SH "echo \" Expression finish\" >$each\_Expression.mark || touch $output_dir/Expression/$each/failed\n";
+        print SH "echo ===end at : `date` ===\n";
+        close SH;
+}
+
+open SH,">$output_dir/Expression/fpkm_compare.sh";
+for my $each (@sample_iso){
+        my $fpkm_dir = "$output_dir/Expression/$each/$each.RSEM.out/$each.Readcount_FPKM.xls";
+        $fpkm_dirs .= $fpkm_dir." ";
+}
+chop $fpkm_dirs;
+print SH "echo ===start at : `date` ===\n";
+print SH "$Bin/mapping_rate_trans -n ".$Sample ->{sample_ila}." -dir $output_dir/Expression && \\\n"; 
+print SH "$Bin/merge_FPKM_single_table $fpkm_dirs>$output_dir/Expression/merged.fpkm && \\\n";
+print SH "$Bin/merge_readcounts_single_table $fpkm_dirs>$output_dir/Expression/merged.readcount && \\\n";
+print SH "$Bin/calrowmeans -rpkm $output_dir/Expression/merged.fpkm -group ".$Group ->{group}." -groupname ".$Group ->{groupname}." -out-rowmeans $output_dir/Expression/rowmeans_fpkm.xls && \\\n";
+print SH "$Bin/plot.FPKM_v3.1 -r $output_dir/Expression/rowmeans_fpkm.xls -fpkm $output_dir/Expression/merged.fpkm -rc $output_dir/Expression/merged.readcount -len $output_dir/Cluster/geneINFO -output $output_dir/Expression && \\\n";
+print SH "echo \" Fpkm_diff finish\" >Fpkm.mark || touch $output_dir/Expression/fpkm_failed\n";
+print SH "echo ===end at : `date` ===\n";
+close SH;
+

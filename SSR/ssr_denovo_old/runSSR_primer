@@ -1,0 +1,76 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Getopt::Long;
+use File::Basename qw(basename dirname);
+
+sub usage
+{
+	print STDERR <<USAGE;
+===============================================================================
+Description     Generate a shell script to run SSR 
+Version: 1.1.19-modified by Tingting    
+--------------------------------------------------------
+USAGE: runSSR_primer.pl [options]
+Options:
+	-h/--help		help information
+        -dir                    ssr dir
+	-a	<string>	fasta file, *.fasta(unigene) 
+	
+---------------------------------------------------------
+===============================================================================	
+USAGE
+}
+
+my ($fa, $dir, $help);
+
+GetOptions(
+
+        "h|?|help"=>\$help,
+        "dir=s"=>\$dir,
+        "a=s"=>\$fa,
+        
+);
+if(!defined($fa) || !defined($dir) || defined($help)){
+        &usage;
+        exit 0;
+}
+#my $fa=shift; #input fa file (unigene or components)
+
+my $fa_name = basename($fa);
+my $plotdata_dir="$dir/SSR_Primer";
+my $ini = "/share/work1/staff/chaijc/pipeline/RNA_seq_pacbio/SSR/misa.ini";
+my $misa = "/share/work1/staff/chaijc/pipeline/RNA_seq_pacbio/SSR/misa.pl";
+my $p3_in = "/share/work1/staff/chaijc/pipeline/RNA_seq_pacbio/SSR/p3_in.pl";
+my $p3 = "/share/work1/staff/chaijc/pipeline/RNA_seq_pacbio/SSR/primer3-2.3.4/src";
+my $p3_out = "/share/work1/staff/chaijc/pipeline/RNA_seq_pacbio/SSR/p3_out.pl";
+my $primer = "$fa.primer";
+my $bin_dir="/share/work1/staff/chaijc/pipeline/RNA_seq_pacbio/SSR/bin";
+open OUT, ">runSSR_primer.sh";
+print OUT "cd $dir\n";
+print OUT "mkdir SSR_Primer \n";
+print OUT "cd SSR_Primer \n";
+print OUT "cp $fa ./\n";
+print OUT "echo Start Time:\ndate;\n";
+print OUT "#=================to get the specification file==========\n";
+print OUT "cp $ini ./\n";
+print OUT "#==================find SSR======================\n";
+print OUT "perl $misa $fa_name >$fa_name.misa\n";
+print OUT "#===============prepare input for Primer3==================\n";
+print OUT "perl $p3_in $fa_name.misa\n";
+print OUT "#===============get Primer3 output=======================\n";
+print OUT "cp -rf $p3/primer3_config ./\n";
+print OUT "$p3/primer3_core -io_version=3 < $fa_name.p3in > $fa_name.p3out\n";
+print OUT "`rm -rf primer3_config`\n";
+print OUT "#==================parse output from Primer3=================\n";
+print OUT "perl $p3_out $fa_name.p3out $fa_name.misa \n";
+print OUT "echo End time:\ndate;\n";
+print OUT "#=================plot bar===================================\n";
+print OUT "#perl $bin_dir/SSR_plot.pl $fa_name.statistics\n";
+print OUT "#cp $fa_name.results $fa_name.SSR_primer\n";
+print OUT "#=================statistics==========================\n";
+print OUT "perl $bin_dir/extract_ssr_stat.pl $fa_name.statistics $fa_name\n";
+print OUT "mv $fa_name.results $fa_name.SSR_primer\n";
+print OUT "#=================plot bar===================================\n";
+print OUT "Rscript /share/work1/staff/chaijc/pipeline/RNA_seq_pacbio/SSR/SSR_plot2.R SSR_summary_plot.txt .\n";
+close OUT;

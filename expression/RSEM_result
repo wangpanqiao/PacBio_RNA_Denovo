@@ -1,0 +1,24 @@
+#!/share/public/software/Python-2.7.13/bin/python
+# coding=utf-8
+# Writer:         chaijingchao
+# Program Date:   2016.08.25
+
+
+import argparse,re
+parser = argparse.ArgumentParser(description="RSEM")
+parser.add_argument('--sample',help='the sample name', required=True)
+parser.add_argument('--indir',help='the indir direction', required=True)
+parser.add_argument('--outdir',help='the outdir direction', required=True)
+argv = vars(parser.parse_args())
+sample = argv["sample"]
+file = open(argv["indir"] + "/" + sample + "_TranscriptExp.xls")
+files = file.readlines()
+out1 = open(argv["outdir"] + "/" +  sample + ".Readcount_FPKM.xls", "w")
+out1.write("geneid\tSample_name\tRead_count\tFPKM\n")
+out2 = open(argv["outdir"] + "/geneINFO", "w")
+for eachline in files[1:]:
+    each = eachline.strip().split("\t")
+    out1.write(each[0] + "\t" + sample + "\t" + each[2] + "\t"  + each[3] + "\n")
+    out2.write(each[0] + "\t" + each[1] + "\n")
+out1.close()
+out2.close()

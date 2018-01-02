@@ -1,0 +1,387 @@
+extends layout
+
+block content
+
+	h1(align="center") #{pageTitle}
+	p(align="center") 北京贝瑞和康生物技术有限公司
+	p(align="center")
+		small 生物信息部
+	h2 1 项目信息
+	p 项目名称：
+	p 物种： Human
+	p 参考基因： Hg19
+
+	h2 2 工作流程图
+	h3 2.1 实验流程图：
+	div(align="center")
+		img(src="jade2html/public/img/RNA-seq_library_construction.png")
+	h3 2.2 信息分析流程图：
+	div(align="center")
+		img(src="jade2html/public/img/RNA-seq_bioinfo_pipeline.png")
+	p 根据物种的参考基因组和基因信息，将RNA-seq测序所产生的数据mapping到参考基因组上，获得基因组上的各个基因的表达信息，然后对其进行基因注释，并进行更深入的Gene Ontology和KEGG pathway分析。根据客户要求，我们还可以进行高级的定制分析，对所测样本进行新基因的预测以及转录本可变剪切的分析等等更深入的分析。
+
+	h2 3 生物信息分析
+	h3 3.1 测序数据质量评估
+	h4 3.1.1 测序错误率分布检查
+	p 测序错误率与碱基质量有关，受测序仪本身、测序试剂、样品等多个因素共同影响。通常测序序列（Sequenced  Reads）5’端前几个碱基的错误率相对较高，随着序列的延伸，3’端碱基错误率会不断升高，这是由高通量测序的技术特点决定的。
+	- var ob = JSON.parse(data)
+	ul(align)
+		each val in ob.fastqc_report
+			a(href=val) 
+				li!=val
+	h4 3.1.2 A/T/G/C含量分布检查
+	p 对于RNA-seq来说，因随机性打断及G/C和A/T含量分别相等的原则，理论上GC及AT含量每个测序循环上应分别相等，且整个测序过程稳定不变，呈水平线。
+	h4 3.1.3 测序数据过滤
+	p 某些原始序列带有adaptor序列，或含有少量低质量序列。我们首先经过一系列数据处理去除杂质数据，得到Clean reads。
+	p 按如下步骤进行处理：
+	ol 
+		li 去除含adaptor的reads
+		li 去除N的比例大于**%的reads
+		li 去除低质量reads（质量值Q<=5的碱基占整个read的 50%以上）
+		li 获得Clean reads
+	p 原始序列数据经过去杂质后得到的数据为Clean reads，后续分析都基于Clean reads。
+	h3 3.2 单样品分析
+	h4 3.2.1 基本分析统计
+	p 原始产出的高质量数据根据物种的参考基因组和基因信息进行mapping，并获得一个样本的基本统计信息，其统计结果如表1：
+	div(style="overflow:scroll;")
+		table(class="table table-bordered")
+			each val,index in ob.alignment_stat
+				tr
+				each val2,index2 in ob.alignment_stat[index]
+					td=val2
+	h4 3.2.2 Reads在基因组上的分布
+	p 统计各样本Reads在基因组各个位置大致的分布情况，以及该位置基因的分布情况，用于检测染色体上测序序列分布的异常情况。同时我们还给出Reads在基因组的Exon、Intro、Intergenic区域的分布，用于检测测序序列在基因组上的来源。
+	
+	div(align="center")
+		div(id='myCarousel',class='carousel slide',style="width:50%")
+			ol(class='carousel-indicators')
+				each val,index in ob.region_Pie_Chart
+					if (index==0)
+						li(data-target='#myCarousel',data-slide-to='0',class='active')
+					else
+						li(data-target='#myCarousel',data-slide-to=index)
+			div(class='carousel-inner')
+				each val,index in ob.region_Pie_Chart
+					if (index==0)
+						div(class='active item')
+							img(src=val)
+							div
+								h5!=val
+					else
+						div(class='item')
+							img(src=val)
+							div
+								h5!=val
+		
+			a(class='carousel-control left',href='#myCarousel',data-slide='prev')&lsaquo;
+			a(class='carousel-control right',href='#myCarousel',data-slide='next')&rsaquo;
+		script
+			$('#myCarousel').carousel('next');
+	h4 3.2.3 基因饱和度分析（*）
+	p 分析文库的基因饱和度，即对样本所有基因而言，所测的基因所占的比率。所测数据从随机10%到随机100%的数据的情况下，所测基因在所有基因中所占比率的增长可以文库的基因饱和度情况，它反映了基因表达水平定量对数据量的要求，表达量高的基因，就越容易被准确定量，反之，表达量低的基因，需要较大的测序数据量才能被准确定量。如图1、2：
+	div(class="container-fluid")
+		div(class="row-fluid")
+			div(class="span6")
+				div(id='myCarousel1',class='carousel slide')
+					ol(class='carousel-indicators')
+						each val,index in ob.saturation_covered_genes
+							if (index==0)
+								li(data-target='#myCarousel1',data-slide-to='0',class='active')
+							else
+								li(data-target='#myCarousel1',data-slide-to=index)
+					div(class='carousel-inner')
+						each val,index in ob.saturation_covered_genes
+							if (index==0)
+								div(class='active item')
+									img(src=val)
+									div
+										h5!=val
+							else
+								div(class='item')
+									img(src=val)
+									div
+										h5!=val
+				
+					a(class='carousel-control left',href='#myCarousel1',data-slide='prev')&lsaquo;
+					a(class='carousel-control right',href='#myCarousel1',data-slide='next')&rsaquo;
+				script
+					$('#myCarousel1').carousel('next');
+			div(class="span6")
+				div(id='myCarousel2',class='carousel slide')
+					ol(class='carousel-indicators')
+						each val,index in ob.saturation_RPKM
+							if (index==0)
+								li(data-target='#myCarousel2',data-slide-to='0',class='active')
+							else
+								li(data-target='#myCarousel2',data-slide-to=index)
+					div(class='carousel-inner')
+						each val,index in ob.saturation_RPKM
+							if (index==0)
+								div(class='active item')
+									img(src=val)
+									div
+										h5!=val
+							else
+								div(class='item')
+									img(src=val)
+									div
+										h5!=val
+				
+					a(class='carousel-control left',href='#myCarousel2',data-slide='prev')&lsaquo;
+					a(class='carousel-control right',href='#myCarousel2',data-slide='next')&rsaquo;
+				script
+					$('#myCarousel2').carousel('next');
+	h4 3.2.4 测序均一度分析
+	p 分析样本数据中基因5’-3’区域Reads分布情况，根据转录组建库实验的特点，转录本其产生的测序序列（reads）实际覆盖度的分布是距离转录本的5'端和3'端越近，平均测序深度越低，但总体的均一化程度比较高，说明文库质量越好，Reads的分布情况越均一，如图3：
+	div(align="center")
+		div(id='myCarousel3',class='carousel slide',style="width:50%")
+			ol(class='carousel-indicators')
+				each val,index in ob.randCheck_mRNA
+					if (index==0)
+						li(data-target='#myCarousel3',data-slide-to='0',class='active')
+					else
+						li(data-target='#myCarousel3',data-slide-to=index)
+			div(class='carousel-inner')
+				each val,index in ob.randCheck_mRNA
+					if (index==0)
+						div(class='active item')
+							img(src=val)
+							div
+								h5!=val
+					else
+						div(class='item')
+							img(src=val)
+							div
+								h5!=val
+		
+			a(class='carousel-control left',href='#myCarousel3',data-slide='prev')&lsaquo;
+			a(class='carousel-control right',href='#myCarousel3',data-slide='next')&rsaquo;
+		script
+			$('#myCarousel3').carousel('next');
+	h4 3.2.5 重复相关性检测
+	p 样品间基因表达水平相关性是检验实验可靠性和样本选择是合理性的重要指标。相关系数越接近1，表明样品之间表达模式的相似度越高。通常生物学重复要求R2> 0.92。
+	div(align="center")
+		div(id='myCarousel4',class='carousel slide',style="width:50%")
+			ol(class='carousel-indicators')
+				each val,index in ob.reads_linear
+					if (index==0)
+						li(data-target='#myCarousel4',data-slide-to='0',class='active')
+					else
+						li(data-target='#myCarousel4',data-slide-to=index)
+			div(class='carousel-inner')
+				each val,index in ob.reads_linear
+					if (index==0)
+						div(class='active item')
+							img(src=val)
+							div
+								h5!=val
+					else
+						div(class='item')
+							img(src=val)
+							div
+								h5!=val
+		
+			a(class='carousel-control left',href='#myCarousel4',data-slide='prev')&lsaquo;
+			a(class='carousel-control right',href='#myCarousel4',data-slide='next')&rsaquo;
+		script
+			$('#myCarousel4').carousel('next');
+	h4 3.2.6 基因表达注释
+	p Mapping到参考基因组和基因的数据通过统计可以获得每个基因上的具体表达量，然后对表达的基因进行注释，以及Gene Ontology分析以及KEGG pathway分析。
+	p 基因在不同的表达量范围内的分布式不同的，根据表达量进行分布情况统计，不同的表达量区间的基因数目不同，如图4：
+	div(align="center")
+		div(id='myCarousel5',class='carousel slide',style="width:50%")
+			ol(class='carousel-indicators')
+				each val,index in ob.RPKM_range
+					if (index==0)
+						li(data-target='#myCarousel5',data-slide-to='0',class='active')
+					else
+						li(data-target='#myCarousel5',data-slide-to=index)
+			div(class='carousel-inner')
+				each val,index in ob.RPKM_range
+					if (index==0)
+						div(class='active item')
+							img(src=val)
+							div
+								h5!=val
+					else
+						div(class='item')
+							img(src=val)
+							div
+								h5!=val
+		
+			a(class='carousel-control left',href='#myCarousel5',data-slide='prev')&lsaquo;
+			a(class='carousel-control right',href='#myCarousel5',data-slide='next')&rsaquo;
+		script
+			$('#myCarousel5').carousel('next');
+	h4 3.2.7 Gene Ontology分析
+	p GO(Gene Ontoloy)是基因本体论联合会建立的数据库，适用于各物种，对基因和蛋白功能进行限定和描述。利用GO数据库，可以讲基因按照它们参与的生物学过程，构成细胞的组分，实现的分子功能等进行分类。我们对注释好的基因进行GO的注释，获得每个基因的GO信息，并对其进行二级分类统计，图5反应了基因数目在GO注释中的分布情况。
+	p GO功能显著性富集分析，首先把所有表达基因进行GO term注释，计算每个term的基因列表和基因数目，然后应用超几何检验，找出与整个基因组背景相比，表达基因中显著富集的GO条目.
+	- var GO_Term=ob.GO_Term[0];
+	div(align="center")
+		img(src=GO_Term)
+	h4 3.2.8 KEGG Pathway分析
+	p KEGG Pathway是系统分析基因产物在细胞中的代谢途径以及这些基因产物的功能的数据库，利用KEGG Pathway可以进一步研究基因在生物学上的复杂行为。每个注释到KEGG Pathway的基因都会有相应的通路图，并用红色标记好了基因所在，如图6。然后利用注释结果进行聚类分析。
+	h4 3.2.9 基因结构的优化
+	h5 3.2.9.1 5‘端和3’端的延长
+	p 比对可以获得reads在基因组上的分布，将位置连续且重叠的read连接形成一个TAR(Transcript Active Region)，再通过paired-end reads将不同的TAR连在一起形成一个潜在的gene model，把gene model与已知的注释基因比较，就可以延长基因的5‘端或3’端。
+	h5 3.2.9.2  novel exon的发现
+	p 通过比对可以获得read在参考基因组上的分布情况，将位置连续重叠的reads连在一起形成一个TAR，再通过paired-end reads将不同的TAR连在一起形成潜在的gene model。我们通过比较gene model与现有的注释基因的差别，找到新的exon区域。
+	h4 3.2.10 新基因预测
+	p 根据所测的数据在基因组上的mapping情况，寻找出可能的新转录本，并根据NT，NR，SWISSPROT等数据库来对新的转录本进行注释，从而发现新基因，结果如图7：
+	h4 3.2.11 可变剪切分析（*）
+	p 可变剪切是一个过程，即主要基因或者mRNA前提转录所产生的RNA的外显子以多种方式通过RNA剪切进行重连。可变剪切分析即利用RNA-seq产生的转录本数据对样本可变剪切的方式与位置进行分析。可变剪切又分为几种：exon skipping 、intron retention、mutually exclusive exon、Alternative first/last exon、Alternative 3’ splice site 、Alternative 5’ splice site。
+	h4 3.2.12 融合基因分析（有参考基因组，可选）
+	p FusionMap软件
+	h4 3.2.13 SNP及差异SNP分析（参考基因组，可选分析）
+	p 分析软件：SOAPsnp、GATK、Samtools、picard-tools
+	h4 3.2.14 SSR分析（可选分析）
+	p 分析软件：MISAtools、GMATo
+	h3 3.3 多样品差异分析
+	h4 3.3.1 表达差异分析
+	p 多个样本分析时，需要分析多个样本之间的表达差异。根据实验设计的多个样本比对关系，计算两两样本各个基因表达量的q-value，当q-value值小于0.05时比对的两个样本表达上存在差异，同时提供Fold-change与p-value值作为差异分析的其它参考。
+	h6 Up Regulated Genes
+	div(style="overflow:scroll;")
+		table(class="table table-bordered")
+			each val,index in ob.DEG_UpList
+				tr
+				each val2,index2 in ob.DEG_UpList[index]
+					td=val2
+	h6 Down Regulated Genes
+	div(style="overflow:scroll;")
+		table(class="table table-bordered")
+			each val,index in ob.DEG_DownList
+				tr
+				each val2,index2 in ob.DEG_DownList[index]
+					td=val2
+
+	div(align="center")
+		div(id='myCarousel6',class='carousel slide',style="width:50%")
+			ol(class='carousel-indicators')
+				each val,index in ob.DEG
+					if (index==0)
+						li(data-target='#myCarousel6',data-slide-to='0',class='active')
+					else
+						li(data-target='#myCarousel6',data-slide-to=index)
+			div(class='carousel-inner')
+				each val,index in ob.DEG
+					if (index==0)
+						div(class='active item')
+							img(src=val)
+							div
+								h5!=val
+					else
+						div(class='item')
+							img(src=val)
+							div
+								h5!=val
+		
+			a(class='carousel-control left',href='#myCarousel6',data-slide='prev')&lsaquo;
+			a(class='carousel-control right',href='#myCarousel6',data-slide='next')&rsaquo;
+		script
+			$('#myCarousel6').carousel('next');
+
+	div(align="center")
+		div(id='myCarousel7',class='carousel slide',style="width:50%")
+			ol(class='carousel-indicators')
+				each val,index in ob.venn
+					if (index==0)
+						li(data-target='#myCarousel7',data-slide-to='0',class='active')
+					else
+						li(data-target='#myCarousel7',data-slide-to=index)
+			div(class='carousel-inner')
+				each val,index in ob.venn
+					if (index==0)
+						div(class='active item')
+							img(src=val)
+							div
+								h5!=val
+					else
+						div(class='item')
+							img(src=val)
+							div
+								h5!=val
+		
+			a(class='carousel-control left',href='#myCarousel7',data-slide='prev')&lsaquo;
+			a(class='carousel-control right',href='#myCarousel7',data-slide='next')&rsaquo;
+		script
+			$('#myCarousel7').carousel('next');
+	h4 3.3.2 表达差异基因GO分析  
+	p 对差异表达基因进行GO注释，然后利用注释结果与整个基因组背景相比，进行GO富集分析，从而找出差异表达基因与哪些生物学功能显著相关。
+	h5 3.3.2.1 差异表达基因的GO富集
+	div(style="overflow:scroll;")
+		table(class="table table-bordered")
+			each val,index in ob.GenTable
+				tr
+				each val2,index2 in ob.GenTable[index]
+					td=val2
+	h5 3.3.2.2  GO有向无环图分析能直观展示差异基因富集的GO term及其层级关系。
+	div(align="center")
+		div(id='myCarousel8',class='carousel slide')
+			ol(class='carousel-indicators')
+				each val,index in ob.SigOfNodes
+					if (index==0)
+						li(data-target='#myCarousel8',data-slide-to='0',class='active')
+					else
+						li(data-target='#myCarousel8',data-slide-to=index)
+			div(class='carousel-inner')
+				each val,index in ob.SigOfNodes
+					if (index==0)
+						div(class='active item')
+							img(src=val)
+							div
+								h5!=val
+					else
+						div(class='item')
+							img(src=val)
+							div
+								h5!=val
+		
+			a(class='carousel-control left',href='#myCarousel8',data-slide='prev')&lsaquo;
+			a(class='carousel-control right',href='#myCarousel8',data-slide='next')&rsaquo;
+		script
+			$('#myCarousel8').carousel('next');
+	h4 3.3.3 表达差异基因Pathway分析
+	h5 3.3.3.1 差异表达基因KEGG pathw聚类分析
+	p 对差异表达基因Pathway注释，然后对注释结果进行聚类分析。
+	h5 3.3.3.2 差异表达基因KEGG pathway富集分析
+	p 对差异表达基因进行KEGG pathway注释，然后利用注释结果与整个基因组背景相比，利用超几何分布，进行KEGG pathway富集分析，从而找出差异表达基因与哪些生物学功能显著相关。
+	h4 3.3.4 差异表达基因热图（*）
+	p 绘制不同样本的差异表达热图，以热图的方式展示不同样本中差异表达基因的差异情况，例图11。
+	h4 3.3.5 样本相关性检测分析（*）
+	p 检测两个样本的相关性，以图形的方式直观的展示两个样本间的表达差异情况。
+	h4 3.3.6 基因互作网络分析（可选分析）
+	p 分析软件：cytoscape
+	p 生物体内，不同蛋白常通过复杂的相互作用形成蛋白复合体，从而发挥其生物学功能。蛋白相互作用网络分析整合 BIND 、 Interactome 等多个著名的相互作用网络数据库，构建差异表达基因编码蛋白所参与的相互作用网络。结果示例如图，彩色标记的为差异表达编码蛋白。
+	h2 4 所用软件及数据库
+	h3 4.1 软件及工具：
+	ul
+		a(href="http://tophat.cbcb.umd.edu/")
+			li Tophat:(http://tophat.cbcb.umd.edu/)版本：1.3.2
+		a(href="http://blast.ncbi.nlm.nih.gov/")
+			li Blast:(http://blast.ncbi.nlm.nih.gov/)版本：2.2.20
+		a(href="http://cufflinks.cbcb.umd.edu/")
+			li Cufflinks:(http://cufflinks.cbcb.umd.edu/)版本：1.1.0
+		a(href="http://www.r-project.org/")
+			li R:(http://www.r-project.org/)版本：2.15.2
+	h3 4.2 数据库信息：
+	p NT库
+	a(href="http://www.ncbi.nlm.nih.gov/genbank/") http://www.ncbi.nlm.nih.gov/genbank
+	p NR 库
+	a(href="http://www.ncbi.nlm.nih.gov/genbank/") http://www.ncbi.nlm.nih.gov/genbank/
+	p swissprot库。
+	a(href="http://www.uniprot.org/") http://www.uniprot.org/
+	p GO库
+	a(href="http://www.geneontology.org/GO.downloads.shtml") http://www.geneontology.org/GO.downloads.shtml
+	p Kegg库
+	a(href="http://www.genome.jp/kegg/pathway.html") http://www.genome.jp/kegg/pathway.html
+	h2 5参考文献
+	ul
+		li [1]Trapnell, C., A. Roberts, et al. (2012). "Differential gene and transcript expression analysis of RNA-seq experiments with TopHat and Cufflinks." Nat Protoc 7(3): 562-578.
+		li [2]Trapnell, C., L. Pachter, et al. (2009). "TopHat: discovering splice junctions with RNA-Seq." Bioinformatics 25(9): 1105-1111.
+		li [3]Mortazavi, A., B. A. Williams, et al. (2008). "Mapping and quantifying mammalian transcriptomes by RNA-Seq." Nat Methods 5(7): 621-628.
+		li [4]Kanehisa, M. and S. Goto (2000). "KEGG: kyoto encyclopedia of genes and genomes." Nucleic Acids Res 28(1): 27-30.
+		li [5]Ashburner, M., C. A. Ball, et al. (2000). "Gene ontology: tool for the unification of biology. The Gene Ontology Consortium." Nat Genet 25(1): 25-29.
+	h2 6 联系我们
+	p 地址：
+	p 电话：
+	p 邮箱：

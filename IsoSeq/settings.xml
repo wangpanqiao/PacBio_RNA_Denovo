@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<smrtpipeSettings>
+    <protocol version="2.3.0" id="RS_IsoSeq.1" editable="false">
+        <param name="name" label="Protocol Name">
+            <value>RS_IsoSeq</value>
+            <input type="text"/>
+            <rule required="true"/>
+        </param>
+        <param name="description">
+            <value>Classify, de novo cluster, and map cDNA sequences.</value>
+            <textarea></textarea>
+        </param>
+        <param name="version" hidden="true">
+            <value>1</value>
+            <input type="text"/>
+            <rule type="digits" required="true" min="1.0"/>
+        </param>
+        <param name="state" hidden="true">
+            <value>active</value>
+            <input value="active" type="radio"/>
+            <input value="inactive" type="radio"/>
+        </param>
+        <param name="reference" hidden="true">
+            <value></value>
+            <rule required="false"/>
+        </param>
+        <param name="control" hidden="true"/>
+        <param name="fetch" hidden="true">
+            <value>common/protocols/preprocessing/Fetch.1.xml</value>
+        </param>
+        <param name="filtering">
+            <value>common/protocols/consensus/IsoSeq_ReadsOfInsert.1.xml</value>
+            <select multiple="true">
+                <import extension="xml" contentType="text/directory">common/protocols/consensus</import>
+            </select>
+        </param>
+        <param name="barcode" hidden="true" editableInJob="true"/>
+        <param name="isoseq_classify">
+            <value>common/protocols/isoseq/Classify.1.xml</value>
+        </param>
+        <param name="isoseq_cluster">
+            <value>common/protocols/isoseq/Cluster.1.xml</value>
+        </param>
+        <param name="isoseq_report" hidden="true">
+            <value>common/protocols/isoseq/IsoSeqReports.1.xml</value>
+        </param>
+    </protocol>
+    <moduleStage name="fetch" editable="true">
+        <module label="Fetch v1" id="P_Fetch" editableInJob="true">
+            <description>Sets up inputs</description>
+        </module>
+    </moduleStage>
+    <moduleStage name="filtering" editable="true">
+        <module label="IsoSeq Reads Of Insert" id="P_CCS" editableInJob="false">
+            <description>Generates consensus sequences from single molecules for IsoSeq.</description>
+            <param name="minFullPasses" label="Minimum Full Passes">
+                <value>parameter1</value>
+                <title>The minimum number of full-length passes over the insert DNA for the read to be emitted.</title>
+                <input type="text"/>
+                <rule type="digits" min="0.0" message="Value must be an integer between 0 and 10" max="10.0"/>
+            </param>
+            <param name="minPredictedAccuracy" label="Minimum Predicted Accuracy">
+                <value>parameter2</value>
+                <title>The minimum predicted accuracy (in %) of the Read of Insert emitted.</title>
+                <input type="text"/>
+                <rule type="digits" min="75.0" message="Value must be between 75 and 100" max="100.0"/>
+            </param>
+        </module>
+    </moduleStage>
+    <moduleStage name="barcode" editable="true"/>
+    <moduleStage name="isoseq_classify" editable="true">
+        <module label="IsoSeq Classify v1" id="P_IsoSeqClassify" editableInJob="true">
+            <description>
+      A cDNA analysis workflow to extract reads of insert from PacBio movies, classify them into chimeric or non-chimeric, full-length or non-full-length reads, and map them to the user-specific reference sequence using GMAP.
+    </description>
+            <param name="minSeqLen" label="Minimum sequence length">
+                <value>parameter3</value>
+                <title>
+        The minimum sequence length of each read to analyze.
+      </title>
+                <input type="text"/>
+                <rule type="digits" message="Value must be a non-negative integer"/>
+            </param>
+            <param name="minScore" label="Maximum phmmer score for primer hit" hidden="true">
+                <value>10</value>
+                <title>The minimum phmmer score to detect a primer in a read.</title>
+                <input type="text"/>
+                <rule type="digits" message="Value must be a non-negative integer"/>
+            </param>
+            <param name="customizedPrimerFa" label="Customized primers in FASTA (optional)">
+                <value> </value>
+                <title>Use customized primers (in a FASTA file) instead of using the default</title>
+                <input type="text"/>
+                <rule required="false" remote="api/protocols/resource-exists?paramName=customizedPrimerFa" message="File does not exist or is not accessible to SMRTPipe"/>
+            </param>
+            <param name="ignorePolyA" label="Full-length reads do not require polyA tails">
+                <value>false</value>
+                <title>Specify whether or not full-length reads require PolyA tails.</title>
+                <input type="checkbox"/>
+            </param>
+            <param name="flnctobam" label="Convert sam files of full-length non-chimeric reads of insert to bam." hidden="true">
+                <value>True</value>
+                <title>Convert sam files of full-length non-chimeric reads of insert to bam</title>
+                <input type="checkbox"/>
+            </param>
+            <param name="flnctocmph5" label="Convert sam files of full-length non-chimeric reads of insert to cmph5." hidden="true">
+                <value>True</value>
+                <title>Convert sam files of full-length non-chimeric reads of insert to cmph5</title>
+                <input type="checkbox"/>
+            </param>
+            <param name="gmap_n" label="Maximum number of paths per isoform or read (GMAP --npaths option)">
+                <value>0</value>
+                <title>The maximum number of GMAP paths to show for each isoform or read (the same as GMAP --npaths option). If set to 0, print two paths if chimera detected, else one.</title>
+                <input type="text"/>
+                <rule type="digits" message="Value must be a non-negative integer"/>
+            </param>
+        </module>
+    </moduleStage>
+    <moduleStage name="isoseq_cluster" editable="true">
+        <module label="IsoSeq Cluster v1" id="P_IsoSeqCluster" editableInJob="true">
+            <description>
+    A cDNA analysis workflow to predict de novo consensus isoforms of transcripts from the classified reads using the ICE (Iteratively Clustering and Error Correction) algorithm.  Align predicted consensus isoforms to the user-specific reference sequence using GMAP.
+    </description>
+            <param name="cluster" label="Predict consensus isoforms using the ICE algorithm">
+                <value>true</value>
+                <title>Specify whether or not to predict consensus isoforms using the Iterative Clustering and Error Correction (ICE) algorithm.</title>
+                <input type="checkbox"/>
+            </param>
+            <param name="iceWhichQV" label="QVs to use by ICE for clustering" hidden="true">
+                <value>use_fq_qv</value>
+                <title>QVs to use by ICE for computing cluster probabilities.</title>
+                <select>
+                    <option optValue="use_fq_qv">the single QV from FASTQ</option>
+                    <option optValue="use_no_qv">no QV</option>
+                    <option optValue="use_finer_qv">multiple QVs from CCS H5</option>
+                </select>
+            </param>
+            <param name="maxIterations" label="Maximum number of iterations." hidden="true">
+                <value>100</value>
+                <title>
+        The maximum number of iterations called in the ICE algorithm.
+      </title>
+                <input type="text"/>
+                <rule type="digits" message="Value must be a positive integer between 0 - 1000"/>
+            </param>
+            <param name="nChunks" label="Parallel tasks" hidden="false">
+                <value>6</value>
+                <title>The number of tasks run in parallel during Iterative Clustering.</title>
+                <input type="text"/>
+                <rule type="digits" message="Value must be a non-negative integer"/>
+            </param>
+            <param name="maxCells" label="Maximum number of SMRTCells allowed" hidden="true">
+                <value>12</value>
+                <title>The maximum number of SMRTCells allowed to process by SMRTPipe IsoSeq.</title>
+            </param>
+            <param name="cDNASize" label="Estimated cDNA size">
+                <value>parameter4</value>
+                <title>Estimated cDNA size, if specified</title>
+                <select>
+                    <option optValue="under1k">under 1kbp</option>
+                    <option optValue="between1k2k">between 1kbp ~ 2kbp</option>
+                    <option optValue="between2k3k">between 2kbp ~ 3kbp</option>
+                    <option optValue="above3k">above 3k</option>
+                </select>
+            </param>
+            <param name="quiver" label="Call Quiver to polish consensus isoforms">
+                <value>true</value>
+                <title>Specify whether or not to call Quiver to polish consensus isoforms using non-full-length, non-chimeric reads.</title>
+                <input type="checkbox"/>
+            </param>
+            <param name="hq_quiver_min_accuracy" label="Minimum quiver accuracy to classify an isoform as HQ">
+                <value>parameter5</value>
+                <title>The minimum Quiver accuracy needed to classify an isoform as high quality.</title>
+                <input type="text"/>
+                <rule type="number" min="0.0" message="Value must be between 0.0 and 1.0" max="1.0"/>
+            </param>
+            <param name="useSGE" label="Enable IsoSeq ICE to qsub jobs (SGE is required)." hidden="true">
+                <value>False</value>
+                <title>Enable IsoSeq ICE to qsub jobs. This is an experimental option for speeding up IsoSeq ICE. SGE has to be installed and work.</title>
+                <input type="checkbox"/>
+            </param>
+            <param name="maxSGEJobs" label="Maximum number of SGE jobs that IsoSeq ICE can submit simultaneously." hidden="true">
+                <value>20</value>
+                <title>Maximum number of SGE jobs that IsoSeq ICE can submit simultaneously if useSGE is checked.</title>
+                <input type="text"/>
+                <rule type="digits" message="Value must be a non-negative integer"/>
+            </param>
+            <param name="isoformstobam" label="Convert sam files of consensus isoforms to bam." hidden="true">
+                <value>True</value>
+                <title>Convert sam files of consensus isoforms to bam</title>
+                <input type="checkbox"/>
+            </param>
+            <param name="isoformstocmph5" label="Convert sam files of consensus isoforms to cmph5." hidden="true">
+                <value>True</value>
+                <title>Convert sam files isoforms to cmph5</title>
+                <input type="checkbox"/>
+            </param>
+        </module>
+    </moduleStage>
+    <moduleStage name="isoseq_report" editable="true">
+        <module label="RS_IsoSeqReports v1" id="P_IsoSeqReports" editableInJob="false"/>
+    </moduleStage>
+    <fileName>settings.xml</fileName>
+</smrtpipeSettings>

@@ -1,0 +1,42 @@
+#!/usr/bin/perl -w
+### 
+### Copyright (c)   BerryGenomics-2016
+### Writer:         chaijingchao <chaijingchao561@berrygenomics.com>
+### Program Date:   2016.07.29
+
+use warnings;
+use strict;
+use Getopt::Long;
+use FindBin qw ($Bin);
+
+my $usage =
+"
+Usage:
+
+  Options:
+
+  -h                               Help
+  -output_dir              <str>   output_dir
+  -sample                  <str>   the name of sample
+  
+For example:
+        perl $0 -output_dir ./ -sample aaa";
+
+my($output_dir, $sample, $help);
+GetOptions(
+        "output_dir=s" => \$output_dir,
+        "sample=s" => \$sample,
+        "h|help"=>\$help
+);
+if(!$output_dir || !$sample || $help){
+        die "$usage\n";
+}
+system("mkdir $output_dir/SSR") unless (-e "$output_dir/SSR");
+system("mkdir $output_dir/SSR/$sample") unless (-e "$output_dir/SSR/$sample");
+open SH,">$output_dir/SSR/$sample/ssr_$sample.sh";
+print SH "echo ===start at : `date` ===\n";
+print SH "$Bin/runSSR_primer -a $output_dir/Redundant/$sample/Transcripts.fa -dir $output_dir/SSR/$sample&& \\\n";
+print SH "sh $output_dir/SSR/$sample/runSSR_primer.sh && \\\n";
+print SH "echo \"SSR finish\" >SSR.mark\n";
+print SH "echo ===end at : `date` ===\n";
+close SH;

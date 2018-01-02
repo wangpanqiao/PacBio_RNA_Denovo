@@ -1,0 +1,72 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use File::Basename;
+die "Usage: perl $0 <ssr.statistics> <prefix>\n" unless @ARGV==2;
+
+my $statistics=shift;
+my $prefix=shift;
+
+my $dir=dirname($statistics);
+
+my $f1=0;my $f2=0; my $f3=0;my $f4=0;
+my $basic_stat="$dir/$prefix.ssr_summary.txt";
+my $category="$dir/$prefix.ssr_classification.txt";
+my $ssr_freq1="$dir/$prefix.ssr_motif_frequency.txt";
+my $ssr_freq2="$dir/$prefix.repeat_type_frequency.txt";
+open BASIC,">$basic_stat";
+open SUMMARY,">$category";
+open PATTERN1,">$ssr_freq1";
+open PATTERN2,">$ssr_freq2";
+my $size; my $n=0;
+open STAT,$statistics;
+while(<STAT>){
+	chomp;
+	if(/^RESULTS OF MICROSATELLITE SEARCH/){
+		$f1=1;
+		$f2=$f3=$f4=0;
+		next;
+	}
+	elsif(/^Distribution to different repeat type classes/){
+		$f2=1;
+		$f1=$f3=$f4=0;
+		next;
+	}
+	elsif(/^Frequency of identified SSR motifs/){
+		$f3=1;
+		$f1=$f2=$f4=0;
+		next;
+	}
+	elsif(/^Frequency of classified repeat types/){
+		$f4=1;
+		$f1=$f2=$f3=0;
+		next;
+	}elsif(/^Total size of examined sequences \(bp\)\:\s+(\d+)/){
+		$size=$1;
+	}
+	if($size and $n==0){
+		print SUMMARY "## Total size (bp):\t$size\n";
+		$n=1;
+	}
+	unless(/^[1-9|a-zA-Z]/){
+		next;
+	}
+	
+	if($f1){
+		my @array=split /:\s+/;
+		print BASIC $array[0]."\t".$array[1]."\n";
+	}elsif($f2){
+		my @array=split /\t/;
+		print SUMMARY $array[0]."\t".$array[1]."\n";
+	}elsif($f3){
+		print PATTERN1 $_."\n";
+	}elsif($f4){
+		print PATTERN2 $_."\n";
+	}
+}
+close STAT;
+close BASIC;
+close SUMMARY;
+close PATTERN1;
+close PATTERN2;
+

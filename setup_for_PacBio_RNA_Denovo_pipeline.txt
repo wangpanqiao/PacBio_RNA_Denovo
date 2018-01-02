@@ -1,0 +1,29 @@
+R:
+install.packages("VennDiagram")
+
+bioconductor:
+source("http://bioconductor.org/biocLite.R")
+biocLite(c("qvalue", "edgeR", "DESeq", "DESeq2"))
+
+~/.bashrc
+export PATH=/share/software/software/R-3.2.0_INSTALL/bin/:$PATH
+export R_LIBS=/home/jiangdezhi/bin/R_installed_package:$R_LIBS
+export LD_LIBRARY_PATH=/home/jiangdezhi/workdir/software/R-3.2.2/lib:/home/jiangdezhi/workdir/software/R-3.2.2/library:/usr/local/lib/:/home/wangyu/lib:/share/software/software/zlib_1.2.8_install/lib:$LD_LIBRARY_PATH
+export PATH=/share/software/software/python-2.7_install_dir/bin/:$PATH
+export PYTHONPATH=/home/zhouy/work2/Software/KOBAS/src/:/share/software/software/python-2.7_install_dir/lib:$PYTHONPATH
+export LD_LIBRARY_PATH=/home/zhanghk/software/smrt/install/smrtanalysis_2.3.0.140936/analysis/lib:/home/zhanghk/software/smrt/install/smrtanalysis_2.3.0.140936/common/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/share/software/software/gcc_4.9.1_install/lib64:$LD_LIBRARY_PATH:/home/zhanghk/software/smrt/install/smrtanalysis_2.3.0.140936/analysis/lib:/home/zhanghk/software/smrt/install/smrtanalysis_2.3.0.140936/common/lib
+export LD_LIBRARY_PATH=/share/software/software/gmp6.0/lib/:/share/software/software/mpc-1.0.3/lib/:/share/software/software/mpfr-3.1.4/lib/:$LD_LIBRARY_PATH
+export PATH=/home/zhanghk/software/smrt/install/smrtanalysis_2.3.0.140936/analysis/bin/:$PATH
+export PATH=/share/work1/staff/chaijc/software/LSC/LSC-2.0/bin/:$PATH
+export PATH=/share/work1/staff/chaijc/software/CD-HIT/cd-hit-v4.6.1-2012-08-27:$PATH
+export PATH=/share/software/software/blast-2.2.20/bin/:$PATH
+export PATH=/share/work2/staff/jiangdezhi/software/bowtie2/bowtie2-2.1.0:/share/software/software/R-3.2.0_INSTALL/bin/:$PATH
+export PATH=/home/wangyu/bin/tophat:$PATH
+export PATH=/share/work2/staff/zhouy/Software/PASA/pasa-plugins/transdecoder/:$PATH
+export PATH=/share/work1/staff/chaijc/software/LncRNAs/lncrnas-pipeline/:$PATH
+export PATH=/share/work1/staff/chaijc/software/PLEK/PLEK.1.2:$PATH
+export PATH=/share/software/software/trinityrnaseq_r20140717/trinity-plugins/rsem/:$PATH
+export PERL5LIB=/share/work1/staff/chaijc/software/packages/perl/lib/perl5:$PERL5LIB
+
+cp /home/xingsk/.kobasrc /home/your_name

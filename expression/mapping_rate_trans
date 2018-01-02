@@ -1,0 +1,102 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+use Getopt::Long;
+use Data::Dumper;
+use Cwd;
+sub usage
+{
+        print STDERR <<USAGE;
+=================================================================
+Description: select the common annotation and proper annotation  
+
+Options(required):
+        
+		-n      <s>: the names of the samples. seperated by ,
+                -dir    <s>:the dir of expression.
+=================================================================
+USAGE
+}
+my ($help, $n, $dir);
+GetOptions(
+	"h|?|help"=>\$help,
+	"n=s"=>\$n,
+        "dir=s"=>\$dir
+);
+if(!defined($n) || !defined($dir) || defined($help)){
+        &usage;
+	exit 0;
+}
+
+my @name=split/,/, $n;
+my $num=@name;
+
+open OUT,">$dir/mapping_rate.txt",or die $!;
+
+my %read;
+my %map_rate;
+
+foreach my $name (@name){
+	my ($read)=glob "$dir/$name/expression_$name.sh.e*";
+	open READ, "<$read",or die $!;
+	while (my $line=<READ>){
+		if ($line=~/were paired; of these:$/){
+			chomp $line;
+			my @read=split/\s+/,$line;
+			unless (exists $read{$name}){
+				$read{$name}=$read[1]*2;
+			}
+		}
+		if ($line=~/aligned concordantly 0 times$/){
+			chomp $line;
+			my @unmap_rate=split/\s+/,$line;
+			my $unmap_rate_read=$unmap_rate[1];
+			my $unmap_read=$unmap_rate_read*2;
+			unless (exists $map_rate{$name}{'all'}){
+				my $map_read=$read{$name}-$unmap_read;
+				$map_rate{$name}{'all'}=$map_read;
+			}
+		}
+		if ($line=~/aligned concordantly exactly 1 time$/){
+			chomp $line;
+			my @exactly1=split/\s+/,$line;
+			my $exactly1_rate_read=$exactly1[1];
+			my $exactly1_read=$exactly1_rate_read*2;
+			unless (exists $map_rate{$name}{'1'}){
+				$map_rate{$name}{'1'}="$exactly1_read$exactly1[2]";
+			}
+		}
+		if ($line=~/aligned concordantly >1 times$/){
+			chomp $line;
+			my @exactlyn=split/\s+/,$line;
+			my $exactlyn_rate_read=$exactlyn[1];
+			my $exactlyn_read=$exactlyn_rate_read*2;
+			unless (exists $map_rate{$name}{'n'}){
+				$map_rate{$name}{'n'}="$exactlyn_read$exactlyn[2]";
+			}
+		}
+		if ($line=~/overall alignment rate$/) {
+			my $mape_rate=(split(/\s+/,$line))[0];
+			$map_rate{$name}{'all'}.="($mape_rate)";
+		}
+	}
+	close READ;
+}
+
+print OUT "Sample name\tTotal reads\tTotal mapped\n";
+
+foreach my $name(@name){
+	print OUT "$name\t$read{$name}\t$map_rate{$name}{'all'}\n";
+}
+
+close OUT; 
+
+open OUT1,">$dir/mapping_rate_2.txt",or die $!;
+print OUT1 "Sample name\tTotal reads\tTotal mapped\tUniquely mapped\tMulti mapped\n";
+
+foreach my $name(@name){
+	print OUT1 "$name\t$read{$name}\t$map_rate{$name}{'all'}\t$map_rate{$name}{'1'}\t$map_rate{$name}{'n'}\n";
+}
+close OUT1; 
+
+

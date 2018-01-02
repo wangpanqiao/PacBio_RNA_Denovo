@@ -1,0 +1,65 @@
+#!/usr/bin/perl -w
+use strict;
+
+unless (@ARGV == 4) {
+	print "\n\tUsage: <sample><bam_file> <pe_or_se> <stat_out>\n\n";
+	exit;
+}
+
+my ($sample,$in,$mode,$out) = @ARGV;
+
+my %B;
+my $total_num;
+if ($mode eq "se") {
+	open (IN,"samtools view $in|") or die $!;
+	while (<IN>) {
+		chomp;
+		next if (/^$/);
+		my $name=(split/\s+/,$_)[0];
+		$name=~s/\/\d$// if $name=~/\/\d$/;
+		if ((split/\t+/,$_)[2] eq '*') {
+			$B{$name}=0;
+			next;
+		}
+		$B{$name}++;
+	}
+	close IN;
+}
+
+
+if ($mode eq "pe") {
+	open (IN,"samtools view -X $in|") or die $!;
+	while (<IN>) {
+		chomp;
+		next if (/^$/);
+		my $name=(split/\s+/,$_)[0];
+		$name=~s/\/\d$// if $name=~/\/\d$/;
+		my $flag=(split/\t+/,$_)[1];
+		$flag=~/(\d)/;
+		my $mate = $1;
+		$name="$name"."$mate";
+		if ((split/\t+/,$_)[2] eq '*') {
+			$B{$name}=0;
+			next;
+		}
+		$B{$name}++;
+	}
+	close IN;
+}
+
+my ($Map_num,$Uniq_num,$Multi_num);
+foreach my $key (keys %B) {
+		$total_num++;
+		$Map_num++ if $B{$key}!=0;
+		$Uniq_num++ if $B{$key}==1;
+		$Multi_num++ if $B{$key}>=2;
+}
+
+my $Map_per=sprintf "%.2f",100*$Map_num/$total_num;
+my $Uniq_per=sprintf "%.2f",100*$Uniq_num/$Map_num;
+my $Multi_per=sprintf "%.2f",100*$Multi_num/$Map_num;
+open (OUT,">$out") or die $!;
+print OUT "Sample\tTotal Reads\tMapped Reads(ratio))\tUniq mapped Reads(ratio)\tMulti mapped Reads(ratio)\n";
+print OUT "$sample\t$total_num\t$Map_num($Map_per%)\t$Uniq_num($Uniq_per%)\t$Multi_num($Multi_per%)\n";
+close OUT;
+

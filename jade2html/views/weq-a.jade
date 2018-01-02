@@ -1,0 +1,560 @@
+extends layout
+
+block content
+	#header.navbar.navbar-inverse.navbar-fixed-top(role="navigation")
+		.container-fluid.row
+			.col-md-4
+				img(src='html/img/logo.png',style='width:150px; display:inline-block;')
+			.col-md-8
+				h1				
+					| #{pageTitle}
+					small  &nbsp; &nbsp; 北京贝瑞和康生物技术有限公司生物信息部
+	.container-fluid.bs-docs-container
+		.row
+			.col-md-3
+				.bs-sidebar(data-spy="affix")
+					ul.nav.bs-sidenav
+						li
+							a(href="#pinfo") 项目信息
+						li
+							a(href="#intro") 概述
+						li
+							a(href="#doc") 分析流程
+						li
+							a(href="#result") 比对和基于群体样本的变异检测
+							ul.nav
+								li
+									a(href="#r1") 原始数据质控
+								li
+									a(href="#r2") 数据比对结果统计
+								li
+									a(href="#r3") 测序覆盖度分布
+								li
+									a(href="#r4") 变异检测和注释
+						li
+							a(href="#g") 关联分析前数据质控
+							ul.nav
+								li
+									a(href="#g1") 性别信息的质控
+								li
+									a(href="#g2") 变异缺失率以及杂合度质控
+								li
+									a(href="#g3") 亲缘关系鉴定
+								li
+									a(href="#g4") 群体结构分析
+								li
+									a(href="#g5") 位点过滤
+						li
+							a(href="#n") 功效分析及逐点关联分析
+							ul.nav
+								li
+									a(href="#n1") 功效分析
+								li
+									a(href="#n2") 逐点关联分析及多重假设检验的校正
+						li
+							a(href="#v") 功效分析及稀有变异的关联分析
+							ul.nav
+								li
+									a(href="#v1") SKAT
+								li
+									a(href="#v2") burden test (CMC)
+						li
+							a(href="#tail") 所用软件及数据库
+							ul.nav
+								li
+									a(href="#t1") 软件及工具
+								li
+									a(href="#t2") 数据库信息
+						li
+							a(href="#ref") 参考文献
+						li
+							a(href="#as") 附录
+							ul.nav
+								li
+									a(href="#a1") 原始数据说明
+								li
+									a(href="#a2") 结果目录结构说明
+						li
+							a(href="#contact") 联系我们
+						li
+							//a(href="readme.html",target="_blank") ReadMe（流程结果说明）
+			.col-md-9(role="main")
+				h2#pinfo 1 项目信息
+				- var info = JSON.parse(info)
+				- var ob = JSON.parse(data)
+				//slider
+				mixin my_carousel(array,ID,Style)
+					if array.length
+						.flexslider(id=ID,style=Style)
+							ul.slides
+								each val,index in array
+									li
+										a(href=val,class="lightbox",title=val.split("/").reverse()[0],rel=ID)
+											img(src=val)
+										p.flex-caption=val.split("/").reverse()[0]
+						.flexslider(id=ID+"_t",style=Style)
+							ul.slides
+								each val,index in array
+									li
+										img(src=val)
+				mixin my_table(array)
+					if array.length
+						//h6.center!=array[0].filename
+						table.table.table-bordered.table-striped
+							each val,index in array[0].array
+								tr
+									each val_line,index_line in val
+										td=val_line
+				mixin my_short_table(array)
+					if array.length
+						//h6.center!=array[0].filename
+						table.table.table-bordered.table-striped
+							each val,index in array[0].array
+								if index<9
+									tr
+										each val_line,index_line in val
+											td=val_line
+				mixin my_html(array)
+					if array.length
+						ul
+							each val in array
+								li
+									a(href=val)=val
+				p 项目名称：
+					span=info.projectName
+				
+				h2#intro 2 概述
+				p 人类遗传学研究的一个主要目标就是寻找并定位导致人类疾病的变异，为疾病的早期诊断和治疗提供理论基础。随着基因芯片技术、高通量测序技术和相关统计分析方法的发展，通过全基因组范围内的关联分析寻找导致复杂疾病的变异已经成为可能。
+				p 复杂疾病，也称常见疾病（common disease），是指一类受到多因子影响的疾病，不同于孟德尔疾病仅受单一或少数几个基因位点的作用，多种基因、基因间的相互作用以及环境因子都会影响常见疾病的发生。这类疾病包括冠心病、高血压、II型糖尿病、精神分裂症以及阿尔茨海默病等。
+				p 决定孟德尔疾病的变异类型往往是具有高外显率的稀有变异，这种变异通常可以采用连锁分析（linkage analysis）外加精确定位（fine-mapping）的方法找到。但是常见疾病的遗传背景仍不明晰，目前主要有两种解释的假说：常见疾病—常见变异（common disease common variants, CDCV）假说和常见疾病—稀有变异（common disease rare variants, CDRV）假说。
+				p CDCV中的常见变异指那些外显率较低但在群体中具有较高的等位基因频率（通常认为大于5%）的变异，通常认为这类变异已经在群体中存在了好多代。以此假说为基础，并利用基因芯片技术确定常见变异位点的基因型，genome wide association analysis（GWAS）目前已经确定了20000多个与疾病关联的位点<sup>[10]</sup>。但是GWAS采用的是一种间接关联（indirect association）的方式，即使许多关联位点被反复证实，真正找到的致病位点也是有限的；而且通常情况下，关联到位点能够解释的性状遗传性（heritability）是非常有限的。例如，在一项有数万样本的关于II型糖尿病的meta-analysis研究中，关联到的18个常见变异位点总共仅能解释6%的遗传性 <sup>[1]</sup>。这些缺失的性状遗传性很有可能是没有考虑近期产生的具有较高效应值（effect size）的稀有变异造成的，这就是所谓的CDRV假说。
+				p 但是通常的GWAS方法并不适用于稀有变异的关联分析。这主要是由于两个原因造成的：当两个位点的等位基因频率相差较大时，这两个位点之间的连锁不平衡关系就会变得非常弱，在这种情况下采用常规的GWAS的方法很难确定稀有变异的位置；而且因为稀有变异的频率低（小于1%），常规GWAS方法也难以达到期望的统计功效。二代测序技术的发展和新的统计关联方法的出现在一定程度上解决了这个问题。
+				p 采用二代测序技术对全基因组进行深度测序可以明确地找到稀有变异位点，这样就可以对稀有变异进行直接的（direct）关联分析。但是全基因组的深度测序具有较高的成本，作为一种替代方式，全外显子组的深度测序应运而生。虽然外显子区域仅仅包括了全基因组区域的1%，但是据估计它囊括了大约85%的致病变异位点 <sup>[2]</sup>。因此，采用全外显子组测序可以凭借较低的投入获得较高的收益。
+				p 稀有变异的关联分析往往采用一种被称为aggregation或collapsing的方法，这种方法将位于某一基因（或是和某一代谢途径相关的基因组区域，或是任意指定的某一基因组区域）内的稀有变异放在一起考虑，将其作为一个整体与性状进行关联分析。常见的aggregation关联方法一般可分为Burden test，Mixed-effects models以及Hybrid methods <sup>[3]</sup>。Burden test（例如CAST，WSS等）适用于稀有变异具有相同作用方向的情况（有利或有害），Mixed-effects model（例如C-alpha，SKAT等）考虑到某一基因内的不同稀有变异具有不一样的作用方向（有利和有害同时存在），而Hybrid methods（例如CMC，SKAT-O等）则同时考虑到了以上两种情况。在不知晓复杂疾病遗传背景的情况下，可以采用多种方法进行关联分析，以期准确定位致病位点。
+				h2#doc 3 分析流程
+				.center
+					a(href="html/img/weq-a.png",class="lightbox")
+						img(src="html/img/weq-a.png",style="width:70%")
+					h6 信息分析流程图
+				h2#result 4 比对和基于群体样本的变异检测
+				h3#r1 4.1 原始数据质控
+				p 测序得到的raw reads，并不都是有效的，里面含有带接头的，重复的，测序质量低的reads，这些reads会影响比对和后续分析质量，我们必须对下机的reads进行过滤，得到高质量的reads。数据过滤步骤：去除含adaptor的reads；去除N的比例大于10%的reads；去除低质量reads（质量值Q <= 3的碱基数占整个read的50％以上），结果如下表所示：
+				+my_table(ob.quality)
+				h6 结果路径：result/GentypeCalling/reads_quality.xls
+				h3#r2 4.2 数据比对结果统计
+				p 由于有效数据量及数据比对情况对分析结果准确性有很大影响，所以在突变检测分析之前，需要进行数据产出量统计、比对情况统计、捕获效率统计、测序深度及覆盖度统计，以确定数据的质量及分析结果的可靠性，统计项目如下所示：
+				+my_table(ob.QC)
+				h6 结果路径：result/GentypeCalling/all_sample_QC.xls
+				table.table.table-bordered.table-striped
+					tr
+						td Sample
+						td 样品名
+					tr
+						td Clean reads
+						td 过滤后的Clean reads数
+					tr
+						td Mapped reads
+						td 比对上参考基因组的reads数
+					tr
+						td Mapped ratio
+						td 比对率
+					tr
+						td Duplicate reads
+						td 重复reads数（PCR重复）
+					tr
+						td Duplicate ratio
+						td 重复reads比例
+					tr
+						td Capture ratio of target region
+						td 探针捕获效率
+					tr
+						td Average depth of target region
+						td 目标区域的平均测序深度
+					tr
+						td Coverage of target region
+						td 目标区域的覆盖度
+					tr
+						td Coverege of target region at least 4x
+						td 目标区域深度大于等于4x的覆盖区域比例
+					tr
+						td Coverege of target region at least 10x
+						td 目标区域深度大于等于10x的覆盖区域比例
+					tr
+						td Coverege of target region at least 20x
+						td 目标区域深度大于等于20x的覆盖区域比例
+					tr
+						td Coverege of target region at least 50x
+						td 目标区域深度大于等于50x的覆盖区域比例
+				div(style="clear:both;")
+				h3#r3 4.3 测序覆盖度分布
+				p 测序覆盖度分布是衡量测序均一性的重要指标，因此我们统计了测序覆盖度分布情况，如下图所示：
+				.col-md-6
+					.center
+						img(src=ob.hisplot[0],style="width:80%")
+					h6 结果路径：result/GentypeCalling/*histPlot.png
+				.col-md-6
+					.center
+						img(src=ob.cumuplot[0],style="width:80%")
+					h6 结果路径：result/GentypeCalling/*cumuPlot.png
+				p 左侧图中，横坐标表示捕获区域内的单碱基测序深度，纵坐标表示特定深度的碱基数占比，捕获区域内的单碱基深度符合正态分；右侧图中，横坐标表示单碱基累积测序深度（即大于等于），纵坐标表示特定累积深度的碱基占总数的百分比。
+				
+				h3#r4 4.4 变异检测和注释
+				p 本流程使用GATK的GVCF模式进行群体样本的变异检测，使用annova注释检出的变异位点。变异位点（包括snp和indel）以vcf文件的形式提供，变异的注释说明如下表所示：
+				//+my_short_table(ob.annovar_snp)
+				h6 结果路径：result/GentypeCalling/annotation.annovar.*.xls
+				//+my_short_table(ob.annovar_indel)
+				//h6 结果路径：result/GentypeCalling/annotation.annovar.INDEL.xls
+				.col-md-12.center
+					table.table.table-bordered.table-striped
+						tr
+							td #Chr
+							td 变异所在染色体
+						tr
+							td Start
+							td 变异起始位置
+						tr
+							td End
+							td 变异终止位置
+						tr
+							td Ref
+							td 该位点参考序列的碱基
+						tr
+							td Alt
+							td 检测到的突变碱基
+						tr
+							td Quality
+							td 变异质量值
+						tr
+							td snp*
+							td 注释上dbsnp的id
+						tr
+							td Target_flank
+							td SNP所在区域（target区域或者target上下游100bp区域）
+						tr
+							td Region
+							td snp所在的功能区域描述（exonic,intronic,splicing,UTR5,UTR3,upstream,downstream,ncRNA,intergenic）
+						tr
+							td Gene	SNP
+							td 所在基因名
+						tr
+							td Function
+							td 外显子功能描述（nonsynonymous,synonymous,stopgain,stoploss等）
+						tr
+							td AAChange
+							td 突变引起的转录本改变
+						tr
+							td clinvar_20140211
+							td 临床疾病数据库clinvar的注释结果
+						tr
+							td 1000g2014oct_all
+							td 千人基因组项目中所有群体发生该突变的频率
+						tr
+							td 1000g2014oct_eas
+							td 千人基因组项目中东亚人群中发生该突变的频率
+						tr
+							td esp6500si_all
+							td esp6500数据库中所有人群发生该突变的频率
+						tr
+							td ExAC_ALL	ExAC
+							td 数据库中所有群体发生该突变的频率
+						tr
+							td ExAC_EAS	ExAC
+							td 数据库中东亚人群中发生该突变的频率
+						tr
+							td SIFT_score
+							td SIFT预测分值（分值<0.05的突变认为是有害突变）
+						tr
+							td SIFT_pred
+							td SIFT预测结果说明[D: Deleterious (sift<=0.05); T: tolerated (sift>0.05)]
+						tr
+							td Polyphen2_HDIV_score
+							td Polyphen2 HDIV数据库的预测分值(适用复杂表型中罕见等位基因位点突变的诊断)
+						tr
+							td Polyphen2_HDIV_pred
+							td Polyphen2 HDIV数据库的预测结果说明[D: Probably damaging (>=0.957), P: possibly damaging (0.453<=pp2_hdiv<=0.956); B: benign (pp2_hdiv<=0.452)]
+						tr
+							td Polyphen2_HVAR_score
+							td Polyphen2 HVAR数据库的预测分值(适用于符合孟德尔遗传定律疾病的诊断)
+						tr
+							td Polyphen2_HVAR_pred
+							td Polyphen2 HVAR数据库的预测结果说明[D: Probably damaging (>=0.909), P: possibly damaging (0.447<=pp2_hdiv<=0.909); B: benign (pp2_hdiv<=0.446)]
+						tr
+							td MutationTaster_score
+							td MutationTaster数据库的预测分值
+						tr
+							td MutationTaster_pred
+							td MutationTaster预测结果说明[A: disease_causing_automatic; D: disease_causing; N: polymorphism; P: polymorphism_automatic]
+						tr
+							td Gene_Description
+							td 基因功能描述
+						tr
+							td GO_term
+							td GO注释结果，如果一个基因注释上多个GO，GO间以分号隔开，每个GO的注释格式为：GO_ID//GO_term，点表示没有注释上。
+						tr
+							td KEGG_pathway
+							td KEGG_pathway注释结果，如果一个基因注释上多个pathway，pathway间以分号隔开，每个pathway的注释格式为：kegg_ID//kegg_term，点表示没有注释上。
+				div(style="clear:both;")
+				p 注释的统计结果如下表所示：
+				+my_table(ob.annovar_statistic_SNP)
+				h6 结果路径：result/GentypeCalling/annovar_statistic_SNP.xls
+				+my_table(ob.annovar_statistic_INDEL)
+				h6 结果路径：result/GentypeCalling/annovar_statistic_INDEL.xls
+				h2#g 5 关联分析前数据质控
+				h3#g1 5.1 性别信息的质控
+				p 男性仅有一条X染色体，其纯合率（homozygosity rate）一般会被plink软件记为1；而女性有两条X染色体，其纯合率一般会小于0.2。如果男性被标记为女性，就会得到一个比期望值高的纯合率，而女性被标记为男性时，则会得到一个比期望值低的纯合率。当下列表格的STATUS列标记为PROBLEM时，说明有性别信息不一致的情况发生，这时需要进行细致的检查，更正错误，或是在后续的关联分析中排除包含有错误性别信息的个体，相应结果如下表所示:
+				+my_short_table(ob.sex)
+				div FID: 家系ID
+				div IID: 个体ID
+				div PEDSEX: 客户提供的性别信息(1 = male, 2 = female, 0= missing data)
+				div SNPSEX: 利用X染色体纯合率判别的性别信息（F大于0.8时标记为男性，F小于0.2时标记为女性）
+				div STATUS: PROBLEM或者OK
+				div F: 估计出的X染色体的纯合率
+				h6 结果路径：result/QualityControl/sex.xls
+				h3#g2 5.2 变异缺失率以及杂合度质控
+				p 应用于测序的DNA样本质量不高时，变异的检出率和准确率都会受到影响，通常情况下，用于关联分析的样本其变异的缺失率不应该高于7%，这个阈值也可通过缺失率在所有样本中的分布情况确定。缺失率如下表所示：
+				+my_short_table(ob.imissingness)
+				div FID: 家系ID
+				div IID: 个体ID
+				div MISS_PHENO: 该个体是否缺失表型？（Y/N）
+				div N_MISS: 缺失基因型信息的位点个数
+				div N_GENO: 位点总个数
+				div F_MISS: 缺失率
+				h6 结果路径：result/QualityControl/imissingness.xls
+				
+				p 样本的杂合度过高，很有可能是其他样本污染造成的；而样本的杂合度过低，则预示了近亲结婚的可能，结果如下表所示：
+				+my_short_table(ob.heterozygosity)
+				div FID: 家系ID
+				div IID: 个体ID
+				div O(HOM): 纯合位点个数
+				div N(NM): 位点总个数
+				div Heterozygosity: 杂合率，Heterozygosity = (N(NM)-O(HOM))/N(NM)
+				h6 结果路径：result/QualityControl/heterozygosity.xls
+				p 通常情况下可以利用样本杂合度与缺失率的分布图确定筛选标准，例如可以选择缺失率小于0.1，而杂合度处于mean±3sd范围内的个体用于后续分析：
+				.center
+					a(href=ob.imiss_vs_het,class="lightbox")
+						img(src=ob.imiss_vs_het,style="width:60%")
+					h6 
+				h6 结果路径：result/QualityControl/imiss-vs-het.png
+				h3#g3 5.3 亲缘关系鉴定
+				p 基于群体样本的case-control关联分析一般不能包含亲缘关系过近的样本（一般为二级亲属以外的个体），因为在同一家庭内，某些基因型会多次出现，可能造成虚假的关联结果。
+				p 在实际操作中可以根据IBD（identity by descent）的大小来确定两两样本间的亲缘关系。IBD = 1可认为是样本重复（包括同卵双胞胎）的标志，IBD = 0.5可作为一级亲属的标志，IBD = 0.25 可作为二级亲属的标志，IBD = 0.125可作为三级亲属的标志。但是由于确定基因型时可能出错以及LD和群体结构的影响，一般把大于0.1875作为判断二级亲属的阈值，把大于0.98作为重复样本的阈值，结果如下表所示：
+				+my_short_table(ob.IBD)
+				div FID1: 第一个个体的家系ID
+				div IID1: 第一个个体的ID
+				div FID2: 第二个个体的家系ID
+				div IID2: 第二个个体的ID
+				div Z0: P(IBD=0) 不共享IBD等位基因的概率
+				div Z1: P(IBD=1) 共享一个IBD等位基因的概率
+				div Z2: P(IBD=2) 共享两个IBD等位基因的概率
+				div IBD: P(IBD=2)+0.5*P(IBD=1) 
+				h6 结果路径：result/QualityControl/IBD.xls
+				h3#g4 5.4 群体结构分析
+				p 在关联分析中，群体结构（population structure）或称群体分层（population statification）指由于系统的祖先因素导致的case和control中等位基因频率的差异，它是最重要的一种影响关联分析结果的混淆（confounding）因素，在进行关联分析之前需要去除明显的离群点。
+				p 常见的检测和校正群体结构的方法包括PCA、GC（genomic control）以及混合模型等。这些方法一般基于全基因组范围内的常见变异。但外显子区域仅包括约1%的基因组区域，可提供的信息有限。为了提高推测群体结构的准确率我们同时使用smartpca <sup>[4]</sup>以及LASER两种软件<sup>[6,7]</sup>。LASER可以有效利用外显子测序中产生的off-target reads，并采用了一种projection Procrustes analysis方法，用高维空间上的主成分推测处于低维空间上的样本的祖先信息。
+				p 用smartpca进行群体结构分析时，分别选取稀有变异和所有变异作为程序的输入，其中使用所有变异作为程序输入的分析结果如下表所示（稀有变异作为输入时结果表格类似）：
+				+my_short_table(ob.smart)
+				div popID: population ID 群体ID
+				div indivID: individual ID 个体ID
+				h6 结果路径：result/QualityControl/smart*.xls
+				p 第一行为特征向量，第二行为相应样本的特征值（主成分）。
+				p 做图如下：
+				.col-md-6
+					.center
+						a(href=ob.smartPACplot[0],class="lightbox")
+							img(src=ob.smartPACplot[0],style="width:80%")
+						h6 
+				.col-md-6
+					.center
+						a(href=ob.smartPACplot[1],class="lightbox")
+							img(src=ob.smartPACplot[1],style="width:80%")
+						h6 
+				.col-md-6
+					.center
+						a(href=ob.smartPACplot[2],class="lightbox")
+							img(src=ob.smartPACplot[2],style="width:80%")
+						h6 
+				.col-md-6
+					.center
+						a(href=ob.smartPACplot[3],class="lightbox")
+							img(src=ob.smartPACplot[3],style="width:80%")
+						h6 
+				div(style="clear:both")
+				h6 结果路径：result/QualityControl/smartPACplot*.png
+				p 用LASER进行群体结构分析时选取所有变异，结果如下表所示：
+				+my_short_table(ob.laser)
+				div popID: 群体ID
+				div indivID: 个体ID
+				h6 结果路径：result/QualityControl/laser.xls
+				p 分别利用PC1和PC2以及PC3和PC4作图（图中彩点表示Human Genome Diversity Project中的分布于我国境内的不同群体，图中黑点表示本研究所用的样本）：
+				.col-md-6
+					.center
+						a(href=ob.tracePCAplot[0],class="lightbox")
+							img(src=ob.tracePCAplot[0],style="width:80%")
+						h6 
+				.col-md-6
+					.center
+						a(href=ob.tracePCAplot[1],class="lightbox")
+							img(src=ob.tracePCAplot[1],style="width:80%")
+						h6 
+				div(style="clear:both")
+				h6 结果路径：result/QualityControl/tracePCAplot*.png
+				h3#g5 5.5 位点过滤
+				p 位点过滤包括：检出率过低的位点（常见变异检出率大于95%，稀有变异检出率大于99%），检查不符合HWE的位点（control中符合而case中不符合HWE往往暗示有关联发生），case和control中检出率差异较大的位点。
+				p 其中每个位点的缺失率如下表所示：
+				+my_short_table(ob.imissingness)
+				div SNP: SNP iD
+				div CHR: 染色体编号
+				div N_MISS: 缺失该位点数据的样本个数
+				div N_GENO: 总样本个数
+				div F_MISS: 该位点的缺失率
+				h6 结果路径：result/QualityControl/imissingness.xls
+				p 缺失率的分布如下图所示：
+				.center
+					a(href=ob.histogram,class="lightbox")
+						img(src=ob.histogram,style="width:60%")
+				h6 结果路径：result/QualityControl/lmiss_histogram.png
+				h2#n 6 功效分析及逐点关联分析
+				h3#n1 6.1 功效分析
+				p 关联分析中的统计功效指统计检验能够确证真实存在的关联效应的概率（即1减去犯第二类错误的概率）。在实际中，统计功效受到多种因素的影响：其中不可控的因素包括疾病或性状的遗传结构（genetic structure）、遗传变异的效应值（effect size）和等位基因频率、表型的内在波动性以及所研究群体的历史动态；可控因素包括样本的选择、样本量的确定、基因型和表型的度量方法、数据的质控标准以及应用于关联分析的统计方法。由于影响统计功效的因素很多，所以进行功效分析是一个复杂的过程<sup>[7]</sup>。
+				p 对于常见的case-control的情况可用linear trend test计算统计功效[8]。当固定样本量（1000 cases, 1000 controls），Type I 错误为0.05时，统计功效与relative risk及基因频率的关系如下图所示：
+				.center
+					a(href="html/img/power_computed_RelativeRisk.png",class="lightbox")
+						img(src="html/img/power_computed_RelativeRisk.png",style="width:40%")
+					h6 
+				p 当固定relative risk（RRAA = 1.5），Type I 错误为0.05时，统计功效与样本量及基因频率有如下关系：
+				.center
+					a(href="html/img/power_computed_CaseNum.png",class="lightbox")
+						img(src="html/img/power_computed_CaseNum.png",style="width:40%")
+					h6 
+				h3#n2 6.2 逐点关联分析及多重假设检验的校正（使用snp数据）
+				p 在进行稀有变异的aggregation关联分析前，可以首先先进行常见变异的逐点关联分析，以最大限度地利用已有信息。与稀有变异关联分析类似，在不能提前判断常见疾病遗传背景的情况下，需要针对不同的遗传模型分别进行关联分析，常见的遗传模型和相应的统计关联方法如下表所示<sup>[9]</sup>：
+				.center
+					a(href="html/img/Test.png",class="lightbox")
+						img(src="html/img/Test.png",style="width:40%")
+					h6 
+				p 关联结果及多重检验校正（采用permutation方法）的结果如下表所示：
+				+my_short_table(ob.CommonVariant)
+				div CHR: 染色体编号
+				div SNP: SNP ID
+				div A1: 次等位基因
+				div A2: 主要等位基因
+				div TEST: 检验模型
+				div AFF: case中不同种类基因或基因型的个数
+				div UNAFF: control中不同种类基因或基因型的个数
+				div CHISQ: 卡方值
+				div DF: 自由度
+				div P: 渐近P值
+				div EMP1: permutation检验P值
+				div EMP2: 经过多重检验校正后的permutation检验P值
+				h6 结果路径：result/AssociationAnalysis/CommonVariant/result_CommonVariant.xls
+				p 以下QQ图采用CHISQ绘制，曼哈顿图采用P绘制：
+				.col-md-6
+					+my_carousel(ob.chisq,"carousel5",style="width:100%");
+					h6 结果路径：result/AssociationAnalysis/CommonVariant/chisq.*.png
+				.col-md-6
+					+my_carousel(ob.manhattan,"carousel6",style="width:100%");
+					h6 结果路径：result/AssociationAnalysis/CommonVariant/manhattan.*.png
+				h2#v 7 功效分析及稀有变异的关联分析（使用snp数据）
+				p 稀有突变是指在选择样本过程中，位点对应的次等位基因频率MAF值过小（一般小于 5%）的突变位点。由于这些位点的MAF值过小会降低关联的统计功效（Power），因此在一般关联分析中会排除这些稀有突变。在技术上,由于传统的关联分析SNP数据基于芯片结果,无法满足检测需求。基于二代测序的外显子组测序技术以数据高通量和准确性，很好的满足了稀有突变关联的需求。
+				p 而另一方面， GWAS关联分析只涉及了复杂疾病和性状易感基因的很少一部分， 解释的遗传度大大低于预期值， 并且极少数SNPs有明确的与疾病机制相关联的功能性作用。针对这一现象，目前有很多假说，其中一种广为接受的观点是： 低频和稀有突变可能在疾病发生过程中产生重要作用， 而这部分的数据在以往的GWAS中是被遗漏了的。
+				p 为了解决这一问题，发展出了许多针对稀有突变和疾病关联的统计方法，例如序列核关联性检验（SKAT）、负荷检验（burden test）等分析方法。
+				h3#v1 7.1 SKAT
+				p SKAT方法是通过对基因型数据进行核映射，增加关联的准确性。分析过程中需要对分析相关的SNP赋予权重，而在实际分析中，通过SIFT数据库给出的，针对SNP发生后对其相应基因翻译出蛋白的性质影响，作为SNP位点的权重。以增加分析的有效性。
+				p SKAT功效分析（样本数量和功效的关系）
+				.center
+					a(href="html/img/RVAS.power.jpeg",class="lightbox")
+						img(src="html/img/RVAS.power.jpeg",style="width:40%")
+					h6 
+				p 其结果如下表所示：
+				+my_table(ob.skat)
+				div Gene_ID 表示基因名称
+				div P-value 表示检验结果的显著性p 值
+				div All SNP # 表示本次实验中该基因包含的SNP个数
+				div SNP IN TEST # 表示用于关联分析的SNP个数
+				h6 结果路径：result/AssociationAnalysis/RareVariant/skat.xls
+				h3#v2 7.2 burden test (CMC)
+				p 分析结果如下表所示：
+				+my_table(ob.burden_test)
+				div Gene_ID 表示基因名称
+				div P-value 表示CMC关联分析的显著性
+				div ermutated P-value 表示经过置换检验后，校正后的显著性
+				h6 结果路径：result/AssociationAnalysis/RareVariant/burden_test.xls
+				h2#tail 8 所用软件及数据库
+				h3#t1 8.1 软件及工具
+				p bwa 0.7.12-r1044:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="http://www.pacb.com/support/software-downloads/") (http://www.pacb.com/support/software-downloads/)
+				p samtools 1.3:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="http://mummer.sourceforge.net/") (http://mummer.sourceforge.net/)
+				p GATK 3.5-0-g36282e4:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="http://www.room220.com/crt/") (http://www.room220.com/crt/)
+				p ANNOVAR 2016Feb01:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/") (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/)
+				p topGO 2.22.0:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/") (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/)
+				p plink v1.07:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/") (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/)
+				p vcftools v0.1.12b:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href=" http://tandem.bu.edu/trf/trf407b.linux64.download.html") ( http://tandem.bu.edu/trf/trf407b.linux64.download.html)
+				p EIG 5.0.2:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="ftp://emboss.open-bio.org/pub/EMBOSS/") (ftp://emboss.open-bio.org/pub/EMBOSS/)
+				p LASER 2.02:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href=" http://ccb.jhu.edu/software/glimmer/") ( http://ccb.jhu.edu/software/glimmer/)
+				p KOBAS2.0:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href="http://kobas.cbi.pku.edu.cn/download.do") (http://kobas.cbi.pku.edu.cn/download.do)
+				p GeneticsDesign 1.39.0:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="https://www.blast2go.com/blast2go-pro/download-b2g") (https://www.blast2go.com/blast2go-pro/download-b2g)
+				p SKAT 1.1.2:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="http://lowelab.ucsc.edu/tRNAscan-SE/") (http://lowelab.ucsc.edu/tRNAscan-SE/)
+				p AssotesteR 0.1-10:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="http://www.orthomcl.org/common/downloads/software/v2.0/") (http://www.orthomcl.org/common/downloads/software/v2.0/)
+				
+				h3#t2 8.2 数据库信息
+				p Human genome hg19:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href="ftp.broadinstitute.org") (ftp.broadinstitute.org)
+				p Database for BQSR and VQSR:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="ftp://ftp.ncbi.nlm.nih.gov/pub/COG/") (ftp://ftp.ncbi.nlm.nih.gov/pub/COG/)
+				p HapMap 3.3 sites:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href=" http://www.ebi.ac.uk/uniprot") ( http://www.ebi.ac.uk/uniprot)
+				p Omni 2.5 sites:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="http://geneontology.org/") (http://geneontology.org/)
+				p 1000G high-confidence sites:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="http://www.genome.jp/kegg/") (http://www.genome.jp/kegg/)
+				p dbSNP:&nbsp;&nbsp;&nbsp;&nbsp;
+					//a(href="http://www.mgc.ac.cn/VFs/download.htm") (http://www.mgc.ac.cn/VFs/download.htm)
+				p Mills & 1000G Gold Standard Indels:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=" ftp.broadinstitute.org") ( ftp.broadinstitute.org)
+				p Human Genome Diversity Project data:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=" http://csg.sph.umich.edu/chaolong/LASER/HGDP-938-632958.tar.gz") ( http://csg.sph.umich.edu/chaolong/LASER/HGDP-938-632958.tar.gz)
+				p ANNOVAR annotation database
+				h2#ref 9 参考文献
+				ul
+					li [1] Manolio T A, Collins F S, Cox N J, et al. Finding the missing heritability of complex diseases[J]. Nature, 2009, 461(7265): 747-753.
+					li [2] Choi M, Scholl U I, Ji W, et al. Genetic diagnosis by whole exome capture and massively parallel DNA sequencing[J]. Proceedings of the National Academy of Sciences, 2009, 106(45): 19096-19101.
+					li [3] Li B, Liu D J, Leal S M. Identifying rare variants associated with complex traits via sequencing[J]. Current protocols in human genetics, 2013: 1.26. 1-1.26. 22.
+					li [4] Patterson N, Price A L, Reich D. Population structure and eigenanalysis[J]. PLoS genet, 2006, 2(12): e190.
+					li [5] Wang C, Zhan X, Bragg-Gresham J, et al. Ancestry estimation and control of population stratification for sequence-based association studies[J]. Nature genetics, 2014, 46(4): 409-415.
+					li [6] Wang C, Zhan X, Liang L, et al. Improved ancestry estimation for both genotyping and sequencing data using projection Procrustes analysis and genotype imputation[J]. The American Journal of Human Genetics, 2015, 96(6): 926-937.
+					li [7] Sham P C, Purcell S M. Statistical power and significance testing in large-scale genetic studies[J]. Nature Reviews Genetics, 2014, 15(5): 335-346.
+					li [8] R package “GeneticsDesign”.
+					li [9] Clarke G M, Anderson C A, Pettersson F H, et al. Basic statistical analysis in genetic case-control studies[J]. Nature protocols, 2011, 6(2): 121-133.
+					li [10] The NHGRI-EBI Catalog of published genome-wide association studies_2016-3-6
+				h2#as 10 附录
+				h3#a1 10.1 原始数据说明
+				p 高通量测序（如Illumina HiSeq2500等测序平台）测序得到的原始图像数据文件经碱基识别（Base Calling）分析转化为原始测序序列（Sequenced Reads），原始测序数据以fastq（简称为fq）文件格式存储。fastq格式文件中每条 read 由四行组成。
+				p 其中第一行以“@”开头，随后为Illumina 测序标识别符(Sequence Identifiers)和描述文字(选择性部分)；
+				p 第二行是碱基序列；
+				p 第三行以“+”开头，随后为Illumina 测序标识别符(选择性部分)；
+				p 第四行是对应碱基的测序质量，该行中每个字符对应的 ASCII 值减去 33，即为对应第二行碱基的测序质量值。碱基质量值字符对应的测序质量请参照下图：
+				.center
+					a(href="html/img/q.png",class="lightbox")
+						img(src="html/img/q.png",style="width:40%")
+					h6 
+				h3#a2 10.2 结果目录结构说明
+				p 在分析结果包HES-association_result/目录下，HES-association_web_report.html是本web报告；html/目录下是web报告的一些配置文件，可以不必关注；result/目录是本次分析的所有结果目录，具体的目录及文件对应的分析结果说明如下图：
+				.center
+					a(href="html/img/tree.png",class="lightbox")
+						img(src="html/img/tree.png",style="width:40%")
+				h2#contact 11 联系我们
+				p 地址：北京市朝阳区京顺东街6号院9号楼
+				p 电话：010-84409706
+				p 邮箱：info@berrygenomics.com		

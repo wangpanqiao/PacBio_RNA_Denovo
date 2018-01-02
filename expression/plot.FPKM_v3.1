@@ -1,0 +1,172 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Getopt::Long;
+
+#plot density box scatter
+
+sub usage
+{
+        print STDERR <<USAGE;
+=========================================================================
+Description     Generate a shell script to run DEseq and plot
+
+Options
+		-r <s> :      rowmeans fpkm
+		-fpkm <s> :   fpkm file (merge.fpkm)
+		-rc <s> :	readcount file (merge.readcount)
+		-len <s> :	geneINFO 
+		-output<s> : 	the output directory
+		-h|?|help   :  Show this help
+=========================================================================
+USAGE
+}
+
+
+my ( $rowmeans, $rpkm, $len,$readcount, $output, $help);
+GetOptions(
+		"r=s"=>\$rowmeans,
+		"fpkm=s"=>\$rpkm,
+		"rc=s"=>\$readcount,
+		"len=s"=>\$len,
+		"output=s"=>\$output,
+		"h|?|help"=>\$help
+	
+);
+if(!defined($readcount) || !defined($rpkm) || defined($help)||!defined($rowmeans) || !defined($len)) {
+        &usage;
+        exit 0;
+}
+
+$output ||="./";
+unless( -d $output){
+        `mkdir $output`;
+}
+#相关性系数提取出来
+open IN, "$rowmeans" or die $!;
+open OUT,">$output/rowmeans_fpkm_filter.xls";
+my $head=(<IN>);
+print OUT $head;
+while(<IN>){
+        chomp;
+        my @tmp=split;
+        my $sum=0;
+        for(my $i=1; $i<=$#tmp; $i++){
+                $sum = $tmp[$i] if($tmp[$i]>$sum);
+        }
+        if ($sum > 1){
+                print OUT "$_\n";
+        }
+}
+close IN;
+close OUT;
+#my $bin_dir="/PUBLIC/source/RNA/noRef/Diff_analysis/bin"; zhaolili
+#my $corr_dir="/PUBLIC/source/RNA/noRef/Diff_analysis/DE_analysis"; zhaolili
+my $R =<< "END";
+#==============================================================================
+#load data
+#
+.libPaths("/share/public/software/R-3.3.3/lib64/R/library")
+library('reshape2')
+library("ggplot2")
+setwd("$output")
+matrix_rpkm<-read.table("$rpkm",head=T)
+matrix_rpkm<-matrix_rpkm[-1]
+matrix_fpkm_t<-t(matrix_rpkm);
+dims<-dim(matrix_rpkm)
+nc=dims[2]
+
+if(nc>2){
+	pdf("Tree_hclust.pdf");
+	plot(hclust(dist(matrix_fpkm_t,method='manhattan'),method="complete"),hang = -1 )
+	dev.off()
+	png("Tree_hclust.png",type="cairo-png")
+	plot(hclust(dist(matrix_fpkm_t,method='manhattan'),method="complete"),hang = -1 )
+	dev.off()
+}
+
+rp<-read.table("$rowmeans",head=T)
+box_rp<-read.table("$output/rowmeans_fpkm_filter.xls",head=T)
+#---------------------------------------------------------------------------------------------
+##merge rpkm readcount
+rc<-read.table("$readcount",head=T,row.names=1)
+colnames(rc)<-paste(colnames(rc),"readcount",sep=".")
+rc<-rc[order(rownames(rc)),]
+rpkm<-read.table("$rpkm",head=T,row.names=1)
+colnames(rpkm)<-paste(colnames(rpkm),"fpkm",sep=".")
+rpkm<-rpkm[order(rownames(rpkm)),]
+len<-read.table("$len",head=F)
+colnames(len)<-c("geneid","genelen")
+len<-len[order(len[,1]),]
+rc_rpkm<- cbind(len,rc,rpkm)
+write.table(rc_rpkm, file="Readcount_FPKM.xls", sep="\t", quote=F, row.names=F)
+
+#------------------------------------------------------------------------------
+#rpkm Interval
+gene_num=length(matrix_rpkm[1,])
+RPKM<-array(0:0,c(6,length(matrix_rpkm[1,])))
+RPKM_number=rbind(colSums(matrix_rpkm<=0.1), colSums(matrix_rpkm<=0.3 & matrix_rpkm>0.1), colSums(matrix_rpkm<=3.57 & matrix_rpkm>0.3),  colSums(matrix_rpkm>3.57 & matrix_rpkm<=15),  colSums(matrix_rpkm<=60 & matrix_rpkm>15),  colSums(matrix_rpkm>60))
+RPKM_p=100*RPKM_number/dim(matrix_rpkm)[1]
+for(i in 1:6){
+ for(j in 1:gene_num){
+    RPKM_p[i,j]=sprintf("%.2f",as.numeric(RPKM_p[i,j]))
+    RPKM[i,j]<-paste(RPKM_number[i,j],"(",RPKM_p[i,j],"%)",sep="")
+ }
+}
+RPKM<-data.frame(RPKM)
+colnames(RPKM)<-colnames(matrix_rpkm)
+RPKM\$Interval<-c("0-0.1","0.1-0.3","0.3-3.57","3.57-15","15-60",">60")
+RPKM<-RPKM[,c(gene_num+1,1:gene_num)]
+names(RPKM)[1]<-"FPKM Interval"
+out4<-RPKM
+write.table(out4,file="FPKM_interval.xls",sep="\t", quote=F, row.name=F)
+#==============================================================================
+# prepare data for density and box plotting 
+#
+df<-log10(rp[-1])
+df<-melt(df)
+colnames(df)<-c("Group","value")
+box_df<-log10(box_rp[-1]+1)
+box_df<-melt(box_df)
+colnames(box_df)<-c("Group","value")
+#------------------------------------------------------------------------------
+p<-ggplot(df, aes(x=value, colour=Group, group=Group, fill=Group)) +  geom_density(alpha=0.2) + xlab("log10(FPKM)") + ylab("Density") + labs(title="FPKM density distribution")
+p <- p + theme(
+	panel.background = element_rect(fill = "transparent",colour =NA),
+	panel.grid.minor = element_blank(),
+	panel.grid.major = element_blank(),
+	plot.background = element_rect(fill  = "transparent",colour =NA),
+	axis.line=element_line()
+)
+pdf("FPKM_density_distribution.pdf")
+p
+dev.off()
+png("FPKM_density_distribution.png",type="cairo-png")
+p
+dev.off()
+#-1----------------------------------------------------------------------------
+p<-ggplot(box_df, aes(Group, value)) + geom_boxplot(aes(fill = Group)) + xlab("") + ylab("log10(FPKM+1)") + labs(title="FPKM distribution") + theme( axis.text.x=element_text(hjust=1,angle=45))
+p <- p + theme(
+	panel.background = element_rect(fill = "transparent",colour =NA),
+	panel.grid.minor = element_blank(),
+	panel.grid.major = element_blank(),
+	plot.background = element_rect(fill  = "transparent",colour =NA),
+	axis.line=element_line()
+)
+pdf("FPKM_boxplot.pdf")
+p
+dev.off()
+png("FPKM_boxplot.png",type="cairo-png")
+p
+dev.off()
+
+#==============================================================================
+
+
+#==============================================================================
+END
+open FILE,">plot_fpkm.Rscript";
+print FILE $R;
+open R,"|R --vanilla --slave" or die $!;
+print R $R;
+close R;

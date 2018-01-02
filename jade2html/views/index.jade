@@ -1,0 +1,324 @@
+extends layout
+
+block content
+	.container.bs-docs-container
+		.row
+			.col-md-3
+				.bs-sidebar(data-spy="affix")
+					ul.nav.bs-sidenav
+						li
+							a(href="#pinfo") 项目信息
+						li
+							a(href="#doc") 工作流程图
+							ul.nav
+								li
+									a(href="#doc1") 实验流程图
+								li
+									a(href="#doc2") 信息分析流程图
+						li
+							a(href="#result") 生物信息分析
+							ul.nav
+								li
+									a(href="#r1") 测序数据质量评估
+								li
+									a(href="#r2") 单样品分析
+								li
+									a(href="#r3") 多样品差异分析
+						li
+							a(href="#tail") 附录
+							ul.nav
+								li
+									a(href="#t1") 使用软件版本
+								li
+									a(href="#t2") 数据库列表
+						li
+							a(href="#ref") 参考文献
+						li
+							a(href="#contact") 联系我们
+						li
+							a(href="readme.html",target="_blank") ReadMe（流程结果说明）
+			.col-md-9(role="main")
+				h1.center #{pageTitle}
+				.center 
+					small 北京贝瑞和康生物技术有限公司生物信息部
+				h2#pinfo 1 项目信息
+				- var info = JSON.parse(info)
+				table.table.table-bordered.table-striped
+					tr
+						td 项目名称：
+						td=info.projectName
+					tr
+						td 物种：
+						td=info.species
+					tr
+						td 参考基因：
+						td=info.refGene
+				//- p 项目名称：
+				//- 	span=info.projectName
+				//- p 物种：
+				//- 	span=info.species
+				//- p 参考基因：
+				//- 	span=info.refGene
+				h2#doc 2 工作流程图
+				h3#doc1 2.1 实验流程图：
+				.center
+					img(src="html/img/RNA-seq_library_construction.png")
+				p 测序基本过程：提取样品总RNA后，用带有Oligo(dT)的磁珠富集真核生物mRNA（若为原核生物，则用试剂盒去除rRNA后进入下一步）。加入fragmentation buffer将mRNA打断成短片段，以mRNA为模板，用六碱基随机引物（random hexamers）合成第一条cDNA链，然后加入缓冲液、dNTPs、RNase H 和DNA polymerase I合成第二条cDNA链，在经过QiaQuick PCR试剂盒纯化并加EB缓冲液洗脱之后做末端修复并连接测序接头，然后用琼脂糖凝胶电泳进行片段大小选择，最后进行PCR扩增，使用建好的测序文库进行测序。
+				h3#doc2 2.2 信息分析流程图：
+				.center
+					img(src="html/img/rna_flow1.png")
+				p 信息分析过程：根据物种的参考基因组和基因信息，将RNA-seq测序所产生的数据mapping到参考基因组上，获得基因组上的各个基因的表达信息，然后对其进行基因注释，并进行更深入的Gene Ontology和KEGG pathway分析。根据客户要求，我们还可以进行高级的定制分析，对所测样本进行新基因的预测以及转录本可变剪切的分析、SNP分析、蛋白互作分析、基因融合分析等等更深入的分析。
+
+				h2#result 3 生物信息分析
+				h3#r1 3.1 测序数据质量评估
+				p 测序得到的原始图像数据经base calling转化为序列数据，我们称之为raw data或raw reads，结果以fastq文件格式存储，fastq文件为用户得到的最原始文件，里面存储reads的序列以及reads的测序质量。在fastq格式文件中每个read由四行描述：
+				ul.list-unstyled
+					li @read ID
+					li TGGCGGAGGGATTTGAACCC
+					li +
+					li BBBBBBBBBBBBBBBBBBBB
+				p 每个序列共有4行，第1行和第3行是序列名称(有的fq文件为了节省存储空间会省略第三行"+"后面的序列名称),由测序仪产生；第2行是序列；第4行是序列的测序质量，每个字符对应第2行每个碱基，第四行每个字符对应的ASCII值减去33，即为该碱基的测序质量值，比如B对应的ASCII值为66，那么其对应的碱基质量值是33。碱基质量值范围为0到41。illumina Hiseq2000/2500 测序错误率(e)与测序质量值(Q)的关系，可用以下公式表示：
+				.center.mt10
+					公式1：Q<sub>phred</sub> = -10log<sub>10</sub>(e)
+				h4 3.1.1 测序错误率分布检查
+				p 测序错误率与碱基质量有关，具体可用公式1计算获得。受测序仪本身、测序试剂、样品等多个因素共同影响。通常测序序列（Sequenced  Reads）5'端前几个碱基的错误率相对较高，随着序列的延伸，3'端碱基错误率会不断升高，这是由高通量测序的技术特点决定的。一般情况下，每个碱基的测序错误率应低于0.5%。
+				- var ob = JSON.parse(data)
+				ul
+					each val in ob.fastqc_report
+						a(href=val) 
+							li!=val
+				+my_carousel(ob.per_base_quality,"carousel14","width:60%")
+				.center.mt10 横坐标为reads的碱基位置，纵坐标为质量值。
+				h4 3.1.2 A/T/G/C含量分布检查
+				p 在illumina测序平台的转录组测序中，反转录成cDNA时所用的6bp的随机引物会引起前几个位置的核苷酸的组成存在一定的偏好性。而这种偏好型独立于所测序的物种和实验室，并会影响转录组测序的均一化程度(Hansen et al.)。除此之外，因随机性打断及G/C和A/T含量分别相等的原则，理论上GC及AT含量每个测序循环上应分别相等，且整个测序过程稳定不变，呈水平线。
+				+my_carousel(ob.per_base_sequence_content,"carousel15","width:60%")
+				h4 3.1.3 测序数据过滤
+				p 某些原始序列带有adaptor序列，或含有少量低质量序列。我们首先经过一系列数据处理去除杂质数据，得到Clean reads。
+				p 按如下步骤进行处理：
+				ol 
+					li 去除含adaptor的reads
+					li 去除N的比例大于10%的reads
+					li 去除低质量reads（质量值Q<=3的碱基占整个read的 50%以上）
+					li 获得Clean reads
+				p 原始序列数据经过去杂质后得到的数据为Clean reads，后续分析都基于Clean reads。
+				h3#r2 3.2 单样品分析
+				h4 3.2.1 基本分析统计
+				p 原始产出的高质量数据，即clean reads，根据物种的参考基因组和参考基因信息进行mapping，并获得一个样本的基本统计信息。
+				.os
+					table.table.table-bordered.table-striped
+						each val,index in ob.alignment_stat
+							tr
+								each val2,index2 in ob.alignment_stat[index]
+									td=val2
+				p 
+				h4 3.2.2 Reads在基因组上的分布
+				p 统计Mapped Reads在基因组的CDS(Exon)、Intron、Intergenic等区域的分布，用于检测测序序列在基因组上的来源，正常情况下，Exon(外显子)区域的测序序列定位的百分比含量应该最高，定位到Intron(内含子)区域的测序序列可能是由于非成熟的mRNA的污染或者基因组注释不完全导致的，而定位到Intergenic(基因间隔区域)的测序序列可能为基因组注释不完全以及背景噪音。
+				mixin my_carousel(array,ID,Style)
+					if array.length
+						.flexslider(id=ID,style=Style)
+							ul.slides
+								each val,index in array
+									li
+										img(src=val)
+										p.flex-caption=val.split("/").reverse()[0]
+						.flexslider(id=ID+"_t",style=Style)
+							ul.slides
+								each val,index in array
+									li
+										img(src=val)
+					//- .slider-wrapper.theme-default(style=Style)
+					//- 	.ribbon							
+					//- 	div(id=ID,class="nivoSlider")
+					//- 		each val,index in array
+					//- 			img(src=val,data-thumb=val,title=val.split("/").reverse()[0])									
+					//- div(id=ID+"_t",style=Style,class="nivo-html-caption")
+					//- 	each val,index in array
+					//- 		p=val.split("/").reverse()[0]
+				+my_carousel(ob.region_Pie_Chart,"carousel1","width:60%")
+				p 统计各样本Reads在基因组上的密度分布，以及该样本表达的基因在基因组上的密度分布，用于检测染色体上测序序列分布的异常情况。如下图，只列出一号染色体上reads和基因的密度分布图，其他染色体在result目录中，具体作图的方法为滑动窗口(window size)为100k，统计比对到各窗口的reads数和基因数。横轴表示染色体上位置，纵轴表示reads数和gene数。同时我们还给出Reads在基因组的CDS、Intron、Intergenic等区域的分布，用于检测测序序列在基因组上的来源，正常情况下大部分reads都应该来自CDS区域。
+				+my_carousel(ob.depth_chr1,"carousel16","width:80%")
+				h4 3.2.3 基因饱和度分析（*）
+				p 检测文库的基因饱和度，即对样本所有基因而言，随着测序数据量的增加，表达的基因数的变化情况。随机抽取10%、20%、30%...100%的测序数据，分别统计表达的基因数。该分析反映了基因表达水平定量对数据量的要求，表达量高的基因，就越容易被准确定量，反之，表达量低的基因，需要较大的测序数据量才能被准确定量。转录组测序根据不同物种转录组的大小，测序数据量从4Gb到8Gb不等。
+				+my_carousel(ob.saturation_covered_genes,"carousel2","width:70%")
+				+my_carousel(ob.saturation_RPKM,"carousel3","width:70%")
+				h4 3.2.4 测序均一度分析
+				p 分析Reads在基因5'~ 3'区域分布情况，根据转录组建库实验的特点，转录本其产生的测序序列（reads）实际覆盖度的分布是距离转录本的5'端和3'端越近，平均测序深度越低，但总体的均一化程度比较高。因此利用总体均一度来评估文库质量，均一度越高文库质量越好，反之，越差。很多研究表明，很多偏好型的因素都会影响这种均一化的分布(Dohm et al.,2008)。例如，在RNA-seq建库过程中，片段破碎和RNA反转录的顺序不一样会导致RNA-seq最终的数据呈现严重的3'偏好性，其他因素还包括转录区域的GC含量不同、随机引物等等。
+				+my_carousel(ob.randCheck_mRNA,"carousel4","width:70%")
+				.center.mt10 横轴表示转录本位置(5'~3')，纵轴表示reads数目
+				h4 3.2.5 基因表达及注释
+				p 一个基因表达水平的直接体现就是其转录本的丰度情况，转录本丰度程度越高，则基因表达水平越高。在RNA-seq分析中，我们可以通过定位到基因组区域或基因外显子区的测序序列（reads）的计数来估计基因的表达水平。Reads计数除了与基因的真实表达水平成正比外，还与基因的长度、测序深度成正相关。为了使不同基因、不同实验间估计的基因表达水平具有可比性，人们引入了RPKM的概念，RPKM为Reads Per Kb per Million reads，其计算方法为：
+				.center
+					img(src="html/img/RPKM.png",style="width:60%")
+				p 假设RPKM(A)为基因A的表达量，则C为唯一比对到基因A的reads数，N为唯一比对到基因组的总reads数，L为基因A编码区的碱基数。RPKM法能消除基因长度和测序量差异对计算基因表达的影响，计算得到的基因表达量可直接用于比较不同样品间的基因表达差异。如果一个基因存在多个转录本，则用该基因的最长转录本计算其测序覆盖度和表达量。
+				p 利用比对到参考基因组和参考基因的unique reads统计基因表达量，然后对表达的基因进行注释。
+				p 统计基因表达量分布情况，如下图：
+				+my_carousel(ob.RPKM_range,"carousel6","width:70%")
+				.center.mt10 横轴表示RPKM值范围，纵轴表示基因数目
+				h4 3.2.6 重复样本相关性检测
+				p 重复样品间基因表达相关性是检验实验可靠性和样本选择是合理性的重要指标。相关系数越接近1，表明样品之间表达模式的相似度越高。通常生物学重复要求R2> 0.8。
+				+my_carousel(ob.reads_linear,"carousel5","width:70%")
+				if ob.reads_linear.length
+					h4 3.2.7 基因结构的优化
+					h5 3.2.7.1 5'端和3'端的延长
+					p 比对获得reads在参考基因组上的分布，将位置连续且重叠的read连接形成一个TAR(Transcript Active Region，如图黄色区域),每个位点的unique read覆盖度需大于或等于某个阈值（通常是2），再通过paired-end reads（图中黄色线条）将不同的TAR连在一起形成一个潜在的gene model，把gene model与已知的注释基因（图中紫色区域)比较，就可以延长基因的5'端或3'端(本图只延伸基因3'端）。
+					.center
+						img(src="html/img/gene_model_end.png",style="width:60%")
+					h5 3.2.7.2  novel exon的发现
+					p 比对获得reads在参考基因组上的分布，将位置连续重叠的reads连在一起形成一个TAR，再通过paired-end reads将不同的TAR连在一起形成潜在的gene model。我们通过比较gene model与现有的注释基因的差别，找到新的exon区域。
+					.center
+						img(src="html/img/gene_model_exon.png",style="width:60%")
+				if ob.raw.length
+					h4 3.2.8 新基因预测
+					p 分析软件：tophat、cufflinks
+					p 现有数据库中对转录本的注释可能还不全面，通过高通量测序我们能检测到可能的新转录本，并利用NT，NR，SWISSPROT等数据库来对新的转录本进行注释，从而发现新基因。当然还需要实验进一步验证。
+					.os
+						table.table.table-bordered.table-striped
+							each val,index in ob.raw
+								tr
+									each val2,index2 in ob.raw[index]
+										td=val2
+					
+					p.mt10 GeneID: 基因id，cufflinks组装出来的；TranscriptID: 转录本ID，cufflinks组装出来的；RPKM：该转录本的RPKM值；Chr: 参考序列；Strand: 该基因或转录本位于参考序列的正义链或方义链；Start: 该基因或转录本在参考序列上的起始位置；End: 该基因或转录本在参考序列上的终止位置。
+				if ob.altsplice_bar.length
+					h4 3.2.9 可变剪切分析（*）
+					p 分析软件: spliceGrapper
+					p 可变剪切是指mRNA前体以多种方式将exon连接在一起的过程。由于可变剪切使一个基因产生多个mRNA转录本，不同mRNA可能翻译成不同蛋白。因此，通过可变剪切一个基因可能产生多个蛋白，极大地增加了蛋白多样性和生物调控方式的多样性。虽然已知可变剪切在真核生物中普遍存在，但我们可能仍低估了可变剪切的比例，而可变剪切分析即利用RNA-seq获得的转录本数据对样本可变剪切的方式与位置进行分析，可获得大量可变剪切信息。
+					p 目前，可变剪切主要分为四种：exon skipping(ES)、intron retention(IR)、Alternative 3' splice site(A3)、Alternative 5' splice site(A5)。其他几种如mutual exclusive exon(互斥外显子）占可变剪切的比例很小，而且检测准确性不高，因此不予考虑。
+					.center
+						img(src="html/img/altersplice.png",style="width:60%")
+					</br>
+					</br>
+					+my_carousel(ob.altsplice_bar,"carousel13","width:70%")
+					.center.mt10 横轴表示可变剪切类型，纵轴表示可变剪切数目
+				if ob.gene_fusion.length
+					h4 3.2.10 融合基因分析（有参考基因组，可选）
+					p FusionMap软件
+				if ob.Gene_Region_Info.length
+					h4 3.2.11 SNP及差异SNP分析（参考基因组，可选分析）
+					p 分析软件：bwa、Samtools、annovar
+					p 单核苷酸多态性(single nucleotide polymorphism，SNP),指在基因组水平上由单个核苷酸的变异所引起的DNA序列多态性。在基因组DNA中，任何碱基均有可能发生变异，因此SNP既有可能在基因序列内，也有可能在基因以外的非编码序列上。总的来说，位于编码区内的SNP(coding SNP,cSNP)比较少，因为在外显子内，其变异率仅及周围序列的1/5。但它在遗传性疾病研究中却具有重要意义，因此cSNP的研究更受关注。SNP分为转换和颠换两种，二者之比为1:2。SNP在CG序列上出现最为频繁，而且多是C转换为T，原因是CG中的C常为甲基化的，自发地脱氨后即成为胸腺嘧啶。一般而言，SNP是指变异频率大于1%的单核苷酸变异。InDel(insertion-deletion)是指相对于参考基因组，样本中发生的小片段的插入缺失，该插入缺失可能含一个或多个碱基。通常SNP分析包括SNP和InDel两种。
+					+my_carousel(ob.Gene_Region_Info,"carousel17","width:70%")
+					.center.mt10 横坐标表示SNP产生区域，纵坐标表示SNP数目
+				h3#r3 3.3 多样品差异分析
+				h4 3.3.1 表达差异分析
+				p 分析软件：tophat、cuffdiff
+				p 差异表达分析找出在不同样本间存在差异表达的基因，并对差异表达基因做GO功能分析和KEGG Pathway分析。 参考文献（The significance of digital gene expression profiles），可以详细地了解差异表达的筛选方法。
+				p 假设观测到基因A对应的reads数为x，已知在一个大文库中，每个基因的表达量只占所有基因表达量的一小部分，在这种情况下，p(x)的分布服从泊松分布：
+				.center
+					img(src="html/img/poission.png",style="width:60%")
+				p 已知，样本一中唯一比对到基因组的总reads数为N1，样本二中唯一比对到基因组的总reads数为N2，样本一中唯一比对到基因A的总reads数为x，样本二中唯一比对到基因A的总reads数为y，则基因A在两样本中表达量相等的概率可由以下公式计算：
+				.center
+					img(src="html/img/poission_probability.png",style="width:60%")
+				p 然后，我们对差异检验的p value作多重假设检验校正，通过控制FDR（False Discovery Rate）来决定p value的域值。假设挑选了R个差异表达基因，其中S个是真正有差异表达的基因，另外V个是其实没有差异表达的基因，为假阳性结果。希望错误比例Q＝V/R平均而言不能超过某个可以容忍的值，比如1％，则在统计时预先设定FDR不能超过0.01（Benjamini, Yekutieli. 2001）。在得到差异检验的FDR值同时，我们根据基因的表达量（RPKM值）计算该基因在不同样本间的差异表达倍数。FDR值越小，差异倍数越大，则表明表达差异越显著。在我们的分析中，差异表达基因定义为FDR≤0.001且倍数差异在2倍以上的基因。得到差异表达基因之后，我们对差异表达基因做GO功能分析和KEGG Pathway分析。
+				h6 Up Regulated Genes
+				#up-regulate.os
+					table.table.table-bordered.table-striped
+						each val,index in ob.DEG_UpList
+							tr
+								each val2,index2 in ob.DEG_UpList[index]
+									td=val2
+				h6 Down Regulated Genes
+				#down-regulate.os
+					table.table.table-bordered.table-striped
+						each val,index in ob.DEG_DownList
+							tr
+								each val2,index2 in ob.DEG_DownList[index]
+									td=val2
+				p.mt10 logFC: 即为log<sub>2</sub>FC,FC为同一基因在不同样本中的RPKM值倍数变化；logCPM: CPM(counts per million reads)---每百万比对到基因组上的reads中，比对到某基因的reads数；PValue: 差异分析统计学显著性水平，
+				+my_carousel(ob.DEG,"carousel8","width:70%")
+				.center.mt10 红色表示差异表达基因，蓝色水平线表示Fold Change=2的位置
+				+my_carousel(ob.venn,"carousel9","width:50%")
+				h4 3.3.2 表达差异基因GO分析
+				p 分析软件：topGO
+				p GO(Gene Ontoloy)是基因本体论联合会建立的数据库，适用于各物种，对基因和蛋白功能进行限定和描述。根据GO数据库可以将基因按照它们参与的生物学过程，构成细胞的组分，实现的分子功能等进行分类。
+				h5 3.3.2.1 差异表达基因的GO功能分析 
+				p 差异基因的GO功能分析包括：一、GO注释，利用GO数据库中已知的基因和GO term对应关系，获得每个基因的GO信息；二、GO富集分析，利用GO term注释的差异基因，计算每个term的基因列表和基因数目，然后应用超几何检验，找出与整个基因组背景相比，差异表达基因中显著富集的GO条目，从而找出差异表达基因与哪些生物学功能显著相关。
+				.center 
+					span 公式2:
+					img(src="html/img/go_enrichment_function.png",style="width:40%")
+				p 其中，N为所有基因中具有GO注释的基因数目；n为N中差异表达基因的数目；M为所有基因中注释为某特定GO term的基因数目；m为注释为某特定GO term的差异表达基因数目。计算得到的p value，一般p value<0.05为阈值（topGO不推荐使用q value值），满足此条件的GO term定义为在差异表达基因中显著富集的GO term。通过GO功能显著性富集分析能确定差异表达基因行使的主要生物学功能。
+				h6 GO Enrichment of Up Regulated Genes
+				#up-regulate.os
+					table.table.table-bordered.table-striped
+						each val,index in ob.Up_GenTable
+							tr
+								each val2,index2 in ob.Up_GenTable[index]
+									td=val2
+				h6 GO Enrichment of Down Regulated Genes
+				#down-regulate.os
+					table.table.table-bordered.table-striped
+						each val,index in ob.Down_GenTable
+							tr
+								each val2,index2 in ob.Down_GenTable[index]
+									td=val2
+				p.mt10
+					CC/MF/BP:分别为细胞组件、分子功能、生物学过程；GO.ID:GO数据库中GO的唯一编号；Term: GO.ID功能的描述；Pvalue: GO富集分析统计学显著水平，一般情况下，Pvalue<0.05该功能项为富集项；anno.genes:该GO.ID包含的差异表达基因。
+				+my_carousel(ob.GO_Term,"carousel7","width:70%")
+				.center.mt10 富集的GO Terms。横轴表示GO Terms,纵轴表示基因数目。只取富集的前20个GO Terms
+				h5 3.3.2.3  GO有向无环图分析能直观展示差异基因富集的GO term及其层级关系。
+				p 该图为差异基因GO富集分析的结果图形化展示方式，分支代表包含关系，从上之下所定义的功能范围越来越小，一般选取GO富集分析结果中显著性水平最高的前5个GO Term作为有向无环图的主节点，并通过包含关系，将相关的GO Term一起展示，颜色深浅代表富集程度，越深富集水平越高，反之，则越低。
+				+my_carousel(ob.SigOfNodes,"carousel10","width:60%")
+				h4 3.3.3 表达差异基因Pathway分析
+				p 分析软件：kobas
+				p 在生物体内，不同基因相互协调行使其生物学功能，利用Pathway的分析可以更进一步了解基因的参与代谢通路及具体的生物学功能。KEGG（Kyoto Encyclopedia of Genes and Genomes）是有关Pathway的主要公共数据库（Kanehisa,2008）。Pathway显著性富集分析以KEGG Pathway为单位，应用超几何检验，找出与整个基因组背景相比，在差异表达基因中显著性富集的Pathway。该分析的计算公式2(GO功能显著性富集分析)一样，在这里N为所有基因中具有Pathway注释的基因数目；n为N中差异表达基因的数目；M为所有基因中注释为某特定Pathway的基因数目；m为注释为某特定 Pathway 的差异表达基因数目。FDR<0.05的Pathway定义为在差异表达基因中显著富集的Pathway。每个注释到KEGGPathway的基因都会有相应的通路图，并用红色标记好了基因所在的位置，然后利用注释结果进行聚类分析。
+				h6 KEGG Enrichment of Up Regulated Genes
+				#up-regulate.os
+					table.table.table-bordered.table-striped
+						each val,index in ob.Up_pathway
+							tr
+								each val2,index2 in ob.Up_pathway[index]
+									td=val2
+				h6 KEGG Enrichment of Down Regulated Genes
+				#down-regulate.os
+					table.table.table-bordered.table-striped
+						each val,index in ob.Down_pathway
+							tr
+								each val2,index2 in ob.Down_pathway[index]
+									td=val2
+				p.mt10 Term: Kegg pathway功能描述；Database: pathway数据库的名字，此处为KEGG PATHWAY；ID: KEGG数据库中pathway的唯一编号；Sample number: 该pathway中包含的差异基因数；Background number: 该pathway总的基因数；P-Value：单个假设检验中，富集分析统计学显著水平；Corrected P-Value：多重假设检验中，富集分析的统计学水平，一般情况下，Corrected P-value<0.05该pathway为富集项；Genes: geneid,为该pathway包含的差异基因; Hyperlink: 该pathway在KEGG PATHWAY数据库中的超链接；
+				+my_carousel(ob.pathway,"carousel12","width:90%")
+				.center.mt10 富集的KEGG pathway Terms。横轴表示富集的前20个pathway Term（若少于20则表示所有富集的pathway Terms)，纵轴表示基因数目。 
+				h4 3.3.4 差异表达基因热图（*）
+				p 分析软件：R、heatmap.2
+				p 差异基因热图分析，又称差异基因聚类分析，用于判断不同实验条件下调控模式的聚类模式，比较不同实验组合之间RPKM的差异。以不同的实验条件之间的差异基因的RPKM作为输入，用层次聚类(hierarchicalclustering)或者K均值(K-means)等方法对不同表达调控模式进行分类，不同的颜色的区域代表不同的聚类分组信息，同组内的基因表达调控模式类似，可能参与到相同的生物学过程中。由于通常情况下，差异表达基因较多，导致画出热图无法标出基因名字，因此建议用客户感兴趣差异基因进行热图分析。
+				+my_carousel(ob.heatmap,"carousel11","width:80%")
+				.center.mt10 上图为整体层次聚类图，以log<sub>10</sub>RPKM值进行聚类，红色表示高表达基因，绿色表示低表达基因。x轴表示不同样本，y轴表示基因名字。左上角的color key，将log<sub>10</sub>RPKM标准化到（-2,2)范围内。
+				h4 3.3.5 基因互作网络分析（可选分析）
+				p 分析软件：cytoscape
+				p 生物体内，不同蛋白常通过复杂的相互作用形成蛋白复合体，从而发挥其生物学功能。蛋白相互作用网络分析整合 BIND 、 Interactome 等多个著名的相互作用网络数据库，构建差异表达基因编码蛋白所参与的相互作用网络，将其导入cytoscape软件实现蛋白互作网络的可视化。结果如图所示，节点表示基因（或蛋白），节点之间的连线表示节点间的相互作用，节点的大小表示p-value值（可以自己设定），p-value越小，节点越大，反之，越小；节点颜色表示基因表达量，分为正值（上调基因）和负值（下调基因），分别对应两种不同的颜色，颜色越深表示表达量的绝对值越高，反之，则越浅。
+				+my_carousel(ob.Protein_Intereaction,"carousel18","width:50%")
+				h2#tail 4 附录
+				h3#t1 4.1 使用软件版本：
+				ul
+					a(href="http://tophat.cbcb.umd.edu/")
+						li Tophat:&nbsp;&nbsp;&nbsp;&nbsp;(http://tophat.cbcb.umd.edu/)版本：1.3.2
+					a(href="http://blast.ncbi.nlm.nih.gov/")
+						li Blast:&nbsp;&nbsp;&nbsp;&nbsp;(http://blast.ncbi.nlm.nih.gov/)版本：2.2.20
+					a(href="http://cufflinks.cbcb.umd.edu/")
+						li Cufflinks:&nbsp;&nbsp;&nbsp;&nbsp;(http://cufflinks.cbcb.umd.edu/)版本：1.1.0
+					a(href="http://www.r-project.org/")
+						li R:&nbsp;&nbsp;&nbsp;&nbsp;(http://www.r-project.org/)版本：2.15.2
+				h3#t2 4.2 数据库列表：
+				p NT库:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href="http://www.ncbi.nlm.nih.gov/genbank/") http://www.ncbi.nlm.nih.gov/genbank
+				p NR库:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href="http://www.ncbi.nlm.nih.gov/genbank/") http://www.ncbi.nlm.nih.gov/genbank/
+				p Swissprot库:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href="http://www.uniprot.org/") http://www.uniprot.org/
+				p GO库:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href="http://www.geneontology.org/GO.downloads.shtml") http://www.geneontology.org/GO.downloads.shtml
+				p Kegg库:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href="http://www.genome.jp/kegg/pathway.html") http://www.genome.jp/kegg/pathway.html
+				h2#ref 5 参考文献
+				ul
+					li [1] Trapnell, C., A. Roberts, et al. (2012). "Differential gene and transcript expression analysis of RNA-seq experiments with TopHat and Cufflinks." Nat Protoc 7(3): 562-578.
+					li [2] Trapnell, C., L. Pachter, et al. (2009). "TopHat: discovering splice junctions with RNA-Seq." Bioinformatics 25(9): 1105-1111.
+					li [3] Mortazavi, A., B. A. Williams, et al. (2008). "Mapping and quantifying mammalian transcriptomes by RNA-Seq." Nat Methods 5(7): 621-628.
+					li [4] Kanehisa, M. and S. Goto (2000). "KEGG: kyoto encyclopedia of genes and genomes." Nucleic Acids Res 28(1): 27-30.
+					li [5] Ashburner, M., C. A. Ball, et al. (2000). "Gene ontology: tool for the unification of biology. The Gene Ontology Consortium." Nat Genet 25(1): 25-29.
+					li [6] Hansen, K.D., Brenner, S.E., and Dudoit, S.  Biases in Illumina transcriptome sequencing caused by random hexamer priming. Nucleic acids research 38, e131-e131.
+					li [7] Dohm, J.C., Lottaz, C., Borodina, T., and Himmelbauer, H. (2008). Substantial biases in ultra-short read data sets from high-throughput DNA sequencing. Nucleic acids research 36, e105-e105. 
+				h2#contact 6 联系我们
+				p 地址：北京市朝阳区京顺东街6号院9号楼
+				p 电话：010-84409706
+				p 邮箱：info@berrygenomics.com

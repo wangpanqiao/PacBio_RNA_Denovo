@@ -1,0 +1,518 @@
+extends layout
+
+block content
+	#header.navbar.navbar-inverse.navbar-fixed-top(role="navigation")
+		.container-fluid.row
+			.col-md-4
+				img(src='html/img/logo.png',style='width:150px; display:inline-block;')
+			.col-md-8
+				h1				
+					| #{pageTitle}
+					small  &nbsp; &nbsp; 北京贝瑞和康生物技术有限公司生物信息部
+	.container-fluid.bs-docs-container
+		.row
+			
+			.col-md-12(role="main")
+				
+				h2#pinfo 1 项目信息
+				//- var info = JSON.parse(info)
+				- var ob = JSON.parse(data)
+				//slider
+				mixin my_carousel(array,ID,Style)
+					if array.length
+						if array[1]
+							.flexslider(id=ID,style=Style)
+								ul.slides
+									each val,index in array
+										li
+											a(href=val,class="lightbox",title=val.split("/").reverse()[0],rel=ID)
+												img(src=val)
+											p.flex-caption=val.split("/").reverse()[0]
+							.flexslider(id=ID+"_t",style=Style)
+								ul.slides
+									each val,index in array
+										li
+											img(src=val)
+						else
+							.center
+								img(src=array[0],style=Style)
+				mixin my_table(array)
+					if array.length
+						//h6.center!=array[0].filename
+						table.table.table-bordered.table-striped
+							each val,index in array[0].array
+								tr
+									each val_line,index_line in val
+										td=val_line
+				mixin my_short_table(array)
+					if array.length
+						//h6.center!=array[0].filename
+						table.table.table-bordered.table-striped
+							each val,index in array[0].array
+								if index<9
+									tr
+										each val_line,index_line in val
+											td=val_line
+				mixin my_html(array)
+					if array.length
+						ul
+							each val in array
+								li
+									a(href=val)=val
+				p 项目名称：BFC2015001
+					//span=info.projectName
+				p 物种：XX植物
+					//span=info.species
+				h2#intro 2 背景介绍
+				p 基因组从头测序也叫<i>de novo</i>测序，是指对基因组序列未知的物种，构建插入片段长度不同的DNA文库进行测序，然后用生物信息学方法进行拼接、组装和注释，从而获得该物种完整的基因组序列图谱，为研究该物种起源进化及特定环境适应性奠定基础。
+				p 传统的基于二代测序（Next-Generation Sequencing， NGS）数据的组装方法，作为研究动植物基因组的重要技术，为基因组学的发展做出了重要贡献。该方法，首先是构建插入片段大小不同的文库，通常包括长插入片段文库，即MatePair文库；然后将测序得到Reads打断成K-mer构建DBG图，遍历寻找最优路径组装得到contig；最后使用长插入片段文库的数据将contig连接成Scaffold，再用所有数据进行GapFilling得到最终组装结果。该方法存在以下无法避免的缺点：
+				p 1. 建库流程繁琐，需构建插入片段长度不同的文库
+				p 2. NGS测序读长较短，无法跨越基因组中的重复序列区域
+				p 3. 存在GC偏好性，导致基因组中GC过高或者过低的区域无法有效覆盖
+				p 4. 测序reads短，拼接难度大，计算资源要求巨大，且基因组拼接准确性差
+				p PacBio公司的三代测序（Third-Generation Sequencing， TGS）技术的出现弥补了NGS在组装应用中的一些缺点，相比较二代测序技术，PacBio的单分子测序技术具有无需PCR扩增、超长读长（最长可达40-70KB）和无GC偏好等优点。
+				p 由于PacBio测序单条reads错误率较高，故单纯的三代组装需要的测序深度较高，一般要求有效测序深度60X以上，而且对文库质量要求严格。而由于动植物基因组偏大，使用纯三代数据进行组装成本较高。
+				p 为了同时利用NGS测序成本低和PacBio测序数据读长长的优势，NGS+TGS联合组装的方式成为一种经济而有效的组装策略。
+				h2#doc 3 建库测序流程
+				h3#d1 3.1 样品质检
+				p TGS+NGS gDNA检测方法包括以下三种：
+				ul
+					li 1. NanoDrop 2000分光光度法：检测 DNA的浓度和纯度（OD 260/280 比值）。
+					li 2. 琼脂糖凝胶电泳或者Fragment Analyzer毛细管电泳系统：分析 DNA降解程度以及是否有 RNA污染。
+					li 3. Qubit荧光染料法：对DNA浓度进行精确定量。
+				p 样品要求浓度和总量达标，基因组完整无降解，无RNA和蛋白污染，无高浓度例子、螯合剂、变性剂等杂质，即可进入建库流程。
+				h3#d2 3.2 文库构建
+				.center
+					a(href="html/img/pac-lab.png",class="lightbox")
+						img(src="html/img/pac-lab.png",style="width:40%")
+					h6 NGS+TGS建库流程示意图
+				p 二代建库：将质检合格的样品，经过纯化后，分别构建常规小片段文库（插入片段为180bp、300bp或500bp等）和Mate-pair文库（插入片段为2Kb、5Kb、8Kb或13Kb等不同大小），可以通过illumina技术进行测序。
+				p 三代建库：将高质量纯化后的基因组，构建PCR-free的SMRT bell文库，通过PacBio SMRT Technology进行测序。
+				p PacBio RSII/Sequel测序系统以SMRT Cells为测序载体，其含有数以万计纳米级的零模波导孔（ZMW），每个ZMW能包含一个DNA聚合酶及一条DNA样品链，并通过不同荧光标记的核苷酸及荧光激发的过程，将不同碱基的信号捕捉下来，从而得到DNA序列信息。
+				p PacBio的文库形状是一个类似哑铃（“套马环”）的结构，称为SMRT bell文库，中间是测序插入片段，两端是环状的测序接头:
+				.center
+					a(href="html/img/pac.png",class="lightbox")
+						img(src="html/img/pac.png",style="width:40%")
+					h6 SMRT bell 文库结构
+				p <b>1. Polymerase reads</b>: 测序读段，指由DNA聚合酶沿着“套马环”模板链反应合成的核苷酸序列
+				p <b>2. Subreads</b>：测序子序列，根据接头序列将Polymerase read打断后的序列，去除5´和3测序引物后的序列
+				h3#d3 3.3 上机测序
+				p 文库构建完成后，使用Bioanalyzer® 2100对文库insert size 进行检测。其中NGS文库使用 qPCR 方法对文库的有效浓度进行准确定量，然后进行Pooling上机测序；TGS文库经PacBio Caculater计算后，按照比例将测序引物和测序酶结合到SMRT bell模板上，然后通过MagBead进行loading测序。
+				h2#result 4 生物信息分析流程
+				.center
+					a(href="html/img/pac-info.png",class="lightbox")
+						img(src="html/img/pac-info.png",style="width:50%")
+					h6 生物信息分析流程图
+				h2#result 5 基本信息分析
+				h3#r1 5.1 数据产出及质量控制
+				div <b>二代测序数据</b>：
+				p 测序输出的数据（下机数据）称为Raw Reads，这些原始数据带有少量adaptor序列，或低质量序列。我们首先经过数据处理去除adaptor和低质量序列，处理步骤如下：
+				ul
+					li 1. 去除含adaptor的reads
+					li 2. 去除N的比例大于3%的reads
+					li 3. 去除低质量reads（质量值Q<3的碱基占read长度的50%以上）
+					li 4. 获得Clean reads
+				p 原始数据去除adaptor和低质量序列后得到的数据为Clean reads，后续信息分析都使用Clean reads。
+				div <b>三代测序数据</b>：
+				p PacBio的原始下机数据称为Polymerase reads，为了得到用于后续分析的Subreads，需要经过以下过滤：
+				ul
+					li 1. 去除长度较短的Polymerase reads
+					li 2. 删除质量值较低的Polymerase reads
+					li 3. 删除Polymerase reads中包含的adapter序列
+				div 二代测序DNA数据产出统计：
+				+my_table(ob.ngs_data)
+				div 三代测序DNA数据产出统计：
+				+my_table(ob.tgs_data)
+				div 二代测序RNA数据产出统计：
+				+my_table(ob.ngs_rna)
+				div <b>注</b>：SampleName，样品名称；LibID，文库编号；ReadsNumber，测序reads数目；BaseNumber，碱基数目；GC(%)，GC含量；Q20(%)，质量值大于20的碱基所占比例；Q30(%)，质量值大于30的碱基所占比例;Depth(X)，测序深度，MeanLength，三代测序数据平均长度；N50，三代测序reads N50；>=5K ReadsNumber，长度大于5k的reads数目；>=5K，长度大于5k的reads的碱基数目
+				.center
+					+my_carousel(ob.len,"carousel1","width:60%")
+					h6 三代subreads 长度分布图
+				h3#r2 5.2 基因组组装
+				h4 5.2.1 基因组组装方案
+				p 基于NGS/TGS联合组装的方法，共有两种分析方案：
+				p 方案一：使用NGS数据组装得到contig，然后使用三代数据进行Scaffold和Gapfilling。
+				ul 
+					li 1. 使用二代测序数据进行组装，选取的软件有DISCORY、Platanus，得到Contig
+					li 2. 使用三代数据连接Scaffold，使用的软件为SSPACE-LONG
+					li 3. 使用三代数据进行Gap_Filling，软件为PBJelly
+				p 方案二：第二种方法为，使用二代数据对三代数据进行纠错，然后使用三代数据进行组装。
+				ul
+					li 1. 使用软件proovread用二代数据对三代数据进行纠错
+					li 2. 使用纠错后的三代测序数据选用OLC方法进行组装
+					li 3. 使用pilon软件对组装结果进行纠错
+				h4 5.2.2 K-mer分析
+				p 对基因组组装需要预先对基因组的情况有一个大致的了解，就需要进行K-mer分析，K-mer是基因组或reads中一段长度为K的连续的核酸序列。一条长度为L的reads可以得到（L-K+1）条长度为K的K-mer序列。该分析项可以用于基因组大小估计、样品杂合度的估计和基因组重复序列比例分析等。在分析过程中，我们通过对二代测序数据的K-mer分析,来对样本基因组的这些信息进行估计，其方法是：使用JellyFish 进行二代数据的K-mer统计，获得数据的K-mer分布图。
+				.center
+					+my_carousel(ob.kmer,"carousel2","width:60%")
+					h6 K-mer深度分布
+				div 基因组K-mer评估结果
+				+my_table(ob.stat_kmer)
+				div <b>注</b>：SampleName，样品名称；LibID，文库名称；KmerSize，K-mer大小；HeteRate，杂合度；GenomeSize，基因组大小
+				h4 5.2.3 组装结果
+				p 本项目中采用第二种组装方案，基因组组装结果如下：
+				+my_table(ob.contig_assemble)
+				p 基因组组装完成后画GC-depth分布图，图中横坐标表示区域内GC含量百分比，纵坐标表示区域内平均测序深度。通过该图可以查看在组装结果中是否存在污染，如果存在污染在图中会出现分开的散点簇，并且可以了解该物种的GC含量。
+				.center
+					+my_carousel(ob.depth,"carousel3","width:40%")
+					h6 GC含量与depth分布图
+				div 结果路径：result/*/assemble/
+				div 表头说明：
+					a(href="README/README_ASSEMBLE.txt") README/README_ASSEMBLE.txt
+
+				h3#r3 5.3 组装结果验证
+				p 当基因组组装完成后会对组装结果进行验证，通常做法是将测序数据与组装结果进行比对，评估数据比回率、成对reads合理比对的比例以及插入片段分布情况，这里的合理比对指的是比对到相同染色体并且符合建库插入片段长度分布。
+				h6 RNA-Seq数据比对结果统计：
+				+my_table(ob.map_rna)
+				h6 DNA文库比对结果统计：
+				+my_table(ob.map_ngs)
+				div <b>注</b>：SampleName，样品名称；LibID，文库名称；ReadNumber，reads数目；Alignment Rate，比对率；Concordantly0，reads比对到不同染色体，或者不满足插入片段要求的比例；Concordantly1，reads成对比对到相同染色体一次，并且满足插入片段长度要求的比例；Concordantly1>1，reads成对比对到相同染色体多次，并且满足插入片段长度要求的比例；ProperlyPairedMaped，等同于Concordantly1和Concordantly>1；MapedDifferentChr，成对reads比对到不同染色体的比例；MapedDifferentChrMapQ>=5，比对质量值大于等于5，并且比对到不同染色体上的比例；SecondaryReads，整体reads被截断比对上的比例
+				p 根据DNA文库与组装序列的比对结果，对文库的插入片段长度进行评估：
+				.center
+					+my_carousel(ob.insert,"carousel2","width:60%")
+					h6 插入片段长度分布图
+				h3#r4 5.4 重复序列注释
+				p 重复序列根据组织形式可以分为两种，分别为串联重复序列和分散重复序列。前一种一般成簇的存在于染色体的特定区域，后一种分散于染色体的各个位置。
+				h4 5.4.1 重复序列预测
+				p 用TRF v4.07b预测串联重复序列，串联重复结果统计如下：
+				+my_table(ob.repeat_trf)
+				div <b>注</b>：Class表示repeat的类型，TandemRepeat代表串联重复
+				div &nbsp;&nbsp;&nbsp;&nbsp;Copy Number表示检测到该repeat类型的数目
+				div &nbsp;&nbsp;&nbsp;&nbsp;bpMasked表示repeat长度，单位为bp
+				div &nbsp;&nbsp;&nbsp;&nbsp;%masked表示这种类型的repeat占基因组长度的百分比
+				h4 5.4.2 分散重复序列预测
+				.center
+					a(href="html/img/pac-repeat.png",class="lightbox")
+						img(src="html/img/pac-repeat.png",style="width:50%;")
+					h6 分散重复序列预测流程图
+				p 用LTR Finder v1.05，RepeatScout v1.0.5，和PILER v1.0预测重复序列，保留序列长度大于等于100bp，gap长度小于等于5%的预测结果，再经过以下过滤和分类：
+				p 1. 对于RepeatScout和PILER的预测结果，去除低复杂度和低copy数的预测重复序列。
+				p 2. 去除编码蛋白序列，预测的重复序列与SwissProt的蛋白序列比对（BLASTX），去除与非TE蛋白序列比对evalue<=1e-4，identity>=30，coverage>=30%，比对长度>=90bp的预测重复序列。
+				p 3. 去除ncRNA序列，与Rfam 11.0数据库比对（BLASTN），去除evalue<=1e-10，identity>=80，coverage>=50%的预测重复序列。
+				p 4. 将预测重复序列与已知的重复序列库（RepBase，TE protein database）进行比对（WU-BLAST），并用RepeatClassifier进行分类，LTR Finder预测结果归入LTR分类。根据分类结果，去除已知的Simple repeat，Satellite，ncRNA。
+				p 5. 去除冗余的预测重复序列，预测的重复序列相互比对（BLASTN），去除evalue<=1e-10，identity>=80，coverage>=80%，比对长度>=80bp的冗余的预测重复序列。
+				p 经过上述过滤过程，三种软件得到预测重复序列结果如下：
+				+my_table(ob.repeat_tools)
+				p 经过分类的预测重复序列：
+				+my_table(ob.repeat_tools_class)
+				h4 5.4.3 重复序列屏蔽
+				p 用RepeatMasker open-4.0.3与RepeatProteinMask屏蔽scaffold中的预测重复序列、已知的重复序列（RepBase）和蛋白重复序列（TE protein database）。
+				p 1. 用RepeatMasker在scaffold中查找预测重复序列：
+				+my_table(ob.repeat_denovo)
+				p 2. 用RepeatMasker在scaffold中查找已知的重复序列（RepBase）：
+				+my_table(ob.repeat_masker)
+				p 3. 用RepeatProteinMask 在scaffold中查找已知的TE protein：
+				+my_table(ob.repeat_proteinmask)
+				p 4. 合并RepeatMasker（预测重复序列与已知重复序列）与RepeatProteinMask的结果，所有重复序列统计如下：
+				+my_table(ob.repeat_all)
+				div <b>注</b>：DNA、LINE、LTR、RC、SINE、Satellite、Retroposon表示对repeat序列的分类类型
+				div &nbsp;&nbsp;&nbsp;&nbsp;以上统计表中每个单元包括三个数字，使用’|’分割，分别表示该类型repeat的数目、长度（单位为bp）以及占基因组的比例
+				div 结果路径：result/*/repeat/
+				div 表头说明：
+					a(href="README/README_REPEAT.txt") README/README_REPEAT.txt
+				h3#r5 5.5 非编码RNA注释
+				p 非编码RNA（Non-coding RNA）是指不编码蛋白质的RNA。其中包rRNA，tRNA，snRNA，snoRNA 和microRNA 等多种已知功能的 RNA，还包括未知功能的RNA。这些RNA的共同特点是都能从基因组上转录而来，但是不翻译成蛋白，在RNA 水平上就能行使各自的生物学功能。
+				p 在分析过程中，对于tRNA预测，采用tRNAscan-SE进行从头预测。rRNA和其他类型的ncRNA通过Rfam进行搜索，通过相似性比对，得到ncRNA具体信息。根据ncRNA的类型，对ncRNA结果进行统计如下：
+				+my_table(ob.ncrna)
+				.center
+					+my_carousel(ob.pie,"carousel4","width:50%")
+					h6 ncRNA种类分布饼图
+				div 结果路径：result/*/ncRNA/
+				div 表头说明：
+					a(href="README/README_NCRNA.txt") README/README_NCRNA.txt
+				h3#r6 5.6 基因组共线性分析
+				p 物种间的亲缘关系越近，共线性片段所覆盖的基因组的范围越大，共线性就会越好。所以根据物种之间的共线性重塑物种基因组结构，推导物种的演化历史。
+				p 主要使用以下几个软件分析共线性，MUMmer是基于核酸序列比对软件，底层算法依赖于后缀树数据结构，最初被用于比较不同物种之间的序列比较。由于软件运行速度较快，现在也常被用于长序列之间的比较。
+				p Lastz进行序列比对，允许大的gap存在，能够找出匹配大的片段。
+				.center
+					+my_carousel(ob.circos,"carousel7","width:40%")
+					h6 样品与近缘物种的共线性展示
+				p 上图为组装得到的基因组序列与近缘物种的共线性图，共线性的block使用淡蓝色的线条连接，线条在Contig、Scaffold或者染色体的位置表示起始或者终止位置。样品与近缘物种的共线性分析结果统计表如下：
+				p 样品与近缘物种的共线性分析结果统计表如下：
+				+my_table(ob.synteny)
+				div <b>注</b>：SampleName，样品名称；Organism，近缘物种；Synteny，共线性块的总长度；Percent，共线性块占样品基因组的比例；Identity，共线性块之间的平均相似性；BlocksNumber，共线性块的数目
+				div 结果路径：result/*/synteny/
+				div 表头说明：
+					a(href="README/README_SYNTENY.txt") README/README_SYNTENY.txt
+				h2#result 6 高级信息分析
+				h3#r7 6.1 编码蛋白基因预测
+				h4 6.1.1 基因预测流程
+				.center
+					img(src="html/img/pac-gene.png",style="width:50%;")
+					h6 基因预测流程图
+				h4 6.1.2 同源蛋白预测
+				p 用Exonerate v2.2.0将近缘物种的蛋白序列比对到scaffold序列上，预测基因结构，并对结果进行统计如下：
+				+my_table(ob.protein)
+				h4 6.1.3 RNA-Seq组装及基因预测
+				p 用HISAT2 v2.0.4将RNA-Seq的reads比对到scaffold上，用Cufflinks v2.2.1进行组装。然后用PASA v2.0.1进行比对组装，预测ORF。
+				+my_table(ob.transcript)
+				p 筛选出蛋白序列100aa~1000aa，cds个数大于等于2，并且能够与参考序列的蛋白序列全长比对的基因。取基因的cDNA序列作为训练集。
+				h4 6.1.4 ab initio基因结构预测
+				p 1. 用Augustus v3.0.3结合RNA-Seq数据预测基因结构。首先用训练集进行参数训练，然后根据RNA-Seq的reads与scaffold的比对结果（TopHat v2.0.10），得到intron hints，再结合intron hints进行基因结构预测。
+				p 2. SNAP v2013-02-16和GlimmerHMM v3.0.4预测基因结构。首先用训练集进行参数训练，然后对屏蔽了重复序列的scaffold进行基因结构预测。
+				p 3. 用GeneMark-ET v4.21 结合intro，对屏蔽了重复序列的scaffold进行基因结构预测。
+				+my_table(ob.Abinitio)
+				h5 6.1.5 整合基因预测结果
+				p 用EVM对上述基因预测结果进行整合，PASA预测UTR以及可变剪切：
+				div(style="width:100%; overflow:scroll;")
+					+my_table(ob.protein_prediction)
+				div <b>注</b>：SampleName，样品名称；Organism，近缘物种名称；GeneNumber，基因数目；TotalTranscriptLen，转录本总长度，TranscriptMeanLen，转录本平均长度；ExonNumber，外显子数目；ExonPerTranscript，平均每个转录本包含的外显子数目；ExonMeanLen，外显子平均长度；CodingExonNumber，编码的外显子数目；IntronNumber，内含子数目；IntronMeanLen，内含子平均长度；TotalCDSLen，编码区总长度；CDSMeanLen，编码区平均长度
+				div 结果路径：result/*/protein
+				div 表头说明：
+					a(href="README/README_GENE.txt") README/README_GENE.txt
+				h3#r8 6.2 基因功能注释
+				p 基因的功能注释主要是和各种功能数据库进行比对，了解基因的功能，掌握基因的产物及其在生命活动中的作用。
+				p <b>NT注释</b>，NT是NCBI官方的核酸序列数据库，包括了GenBank，EMBL和DDBJ（但不包括EST,STS,GSS,WGS,TSA,PAT,HTG序列）的核酸序列。使用blast和NT进行比对，获得基因的注释信息。
+				p <b>NR注释</b>，NR是NCBI官方的蛋白序列数据库，它包括了GenBank基因的蛋白编码序列，PDB(Protein Data Bank)蛋白数据库、Swiss-Prot蛋白序列及来自（Protein Information Resource）和PDF（Protein Research Foundation）等数据库的蛋白序列。使用blast和NR进行比对，获得基因的注释信息。
+				p <b>Swiss-Prot注释</b>，Swiss-Prot搜集了经过有经验的生物学家整理及研究的蛋白序列。使用blast进行比对，获得基因的注释信息。
+				p <b>eggNOG注释</b>，eggNOG数据库是由EMBI开发，将gene根据直系同源关系分成不同的Orthologous族(OGs)，来自同一OGs的基因具有相同的功能。使用blast与eggNOGv4.5进行比对，获得注释结果。
+				.center
+					+my_carousel(ob.eggNOG,"carousel5","width:60%")
+					h6 横轴为eggNOG的功能term，纵轴为该term对应的基因数目
+				p <b>GO注释</b>，GO (Gene Ontology) 是一个国际标准化的基因功能分类体系，提供了一套动态更新的标准词（controlled vocabulary）来全面描述生物体中基因和基因产物的属性。GO总共有三个ontology（本体），分别描述基因的分子功能（MF: molecular function）、所处的细胞位置（CC: cellular component）、参与的生物过程（BP: biological process）。GO的基本单位是term（词条、节点），每个term都对应一个属性,每个term有一个唯一的标示符（由“GO:”加上7个数字组成，例如GO:0072669）；每类ontology的term通过它们之间的联系，构成一个有向无环的拓扑结构。
+				p 使用Blast2GO进行GO注释，将到预测到的基因与GO编号对应起来。由于基因和GO编号是多对多的关系，所以一个基因会出现在多个GO里面，并将GO编号根据三个本体进行分类。下面给出了三个本体论中包含基因最多的前二十个GO Term的分布。
+				.center
+					+my_carousel(ob.GO_Term,"carousel11","width:60%")
+					h6 横轴为GO注释中的二级分类，纵轴为该分类中的基因数目
+				p <b>KEGG注释</b>，KEGG (Kyoto Encyclopedia of Genes and Genomes) 是系统分析基因产物和化合物在细胞中的代谢途径以及这些基因产物的功能的数据库。它整合了基因组、化学分子和生化系统等方面的数据,包括代谢通路（KEGG PATHWAY）、药物（KEGG DRUG）、疾病（KEGG DISEASE）、功能模型（KEGG MODULE）、基因序列（KEGG GENES）及基因组（KEGG GENOME）等等。KO（KEGG ORTHOLOG）系统将各个KEGG注释系统联系在一起，KEGG已建立了一套完整KO注释的系统，可完成基因相应的功能注释。
+				.center
+					+my_carousel(ob.kegg,"carousel12","width:40%")
+					h6 基因在五类数据库中的注释结果
+				p <b>Interpro注释</b>，InterPro 是EMBI开发的蛋白结构分析数据库，融合多个数据库（CATH-Gene3D、CDD、HAMAP、PANTHER、Pfam、PIRSF、PRINTS、ProDom、PROSITE、SMAT、SUPERFAMILY、TIGRFAMs）提供的蛋白特性，可用于对蛋白分类并进行结构域与功能位点注释。使用interproscan-5.18-57.0查询InterPro数据库进行蛋白注释。
+				div 结果路径：result/*/function/
+				div 表头说明：
+					a(href="README/README_BLAST.txt") README/README_BLAST.txt
+				h3#r9 6.3 蛋白家族聚类分析
+				p 蛋白家族是指在序列上功能上存在一定相似性的一系列蛋白。通过对预测基因的蛋白进行蛋白家族聚类分析，可以将功能上可能相同或相似的蛋白归为同一类别，从而降低后期进一步分析的复杂度。同时，通过与外源生物的比较，也可以帮助理解预测基因的功能。
+				p 动物：采用TreeFam method 对预测基因最长的转录本的转录产物all-v-all BLAST比对，通过比对结果，计算蛋白之间Hscore ，使用hcluster软件对结果进行聚类，得到蛋白家族聚类结果，并对所得到的结果进行Venn图展示。
+				p 植物：采用OrthoMCL聚类分析，基本过程为，对所有选定物种的基因序列进行all-v-all BLAST比对，计算序列之间相似性，并采用马尔科夫聚类算法进行聚类分析。得到蛋白家族聚类结果，并用Venn图展示。
+				.center
+					+my_carousel(ob.venn,"carousel6","width:40%")
+					h6 蛋白家族于各物种的关系
+				div 结果路径：result/*/family/
+				div 表头说明：
+					a(href="README/README_FAMILY.txt") README/README_FAMILY.txt
+				h4 6.4 全基因组比较分析
+				p 对于动物基因组会进行WGAC（Whole genome assembly comparison）分析，指的是在全基因组范围内查找SD(Segmental duplication ), 有时也称低拷贝数重复（Low copy repeat），是一类可在基因组上出现约2至50次的DNA序列。这些SD序列既可以串联重复的形式出现，有时也会分散分布于整个基因组中。在人类基因组中，大约有5%为SD序列（长度大于1kb，相似性大于90%），这些SD序列通常被认为与某些基因的进化和一些基因组疾病有联系。
+				p WGAC方法一般分为6步，如下图所示：
+				.center
+					a(href="html/img/wgac.png",class="lightbox")
+						img(src="html/img/wgac.png",style="width:40%;")
+				ul
+					li 1. 找出高拷贝数重复序列，例如Alus、LINEs序列（可以利用已知的重复序列数据库）；
+					li 2. 将基因组切割成较小的片段后（例如400 kb），从中剔除高拷贝数重复序列，生成所谓的fuguized序列片段；
+					li 3. 用BLAST比对这些生成的fuguized序列片段，用LASTZ寻找每个400 kb片段自身内部的重复，比对过程中允许大于1kb的gap出现；
+					li 4. 解析比对结果，并将剔除的高拷贝数重复序列重新插入相应的位置；
+					li 5. 用ALIGN（全局比对程序）比对相应序列，精确定位SD序列的两端位置；
+					li 6. 重新用ALIGH比对SD序列，计算比对得分。
+				p 下图给出了在染色体间和染色体内的SD关系图，表示发生Duplication片段之间的位置关系，线的宽度和位置表示了SD的大小和其在Contig、Scaffold或者染色体上的位置。
+				.center
+					+my_carousel(ob.ex,"carousel8","width:50%")
+					h6 样品染色体间SD关系图
+					+my_carousel(ob.homo,"carousel9","width:50%")
+					h6 染色体内部SD关系图
+				div(class="clearfix")
+				p 对于植物基因组会进行WGD(whole genome duplication)分析，指整个基因组的复制现象，整个基因组发生复制后，往往伴随重复片段的快速丢失和重新发生的二倍体化。通常认为WGD会为生物尤其是植物的进化提供新的素材，有助于它们适应新的环境。事实上，几乎所有现存种子植物的基因组都曾经发生过WGD事件。目前也检测到了某些动物基因组中的WGD事件，例如硬骨鱼中的虹鳟鱼。
+				p 检测WGD可以采用构建基因组中并系同源基因间每个同义位点发生的同义替换数（KS）的分布的方法，这种方法也称为duplicate age distribution方法。一般认为同义突变是中性的，以一个接近恒定的速率在基因组中逐步积累，所以可以利用KS表示并系同源基因产生至今经历的时间。如果假设基因的重复和丢失在生物的进化过程中维持一个恒定的速率，那么KS的分布将呈现出一个L形的曲线，如图1A所示；而在生物进化过程中发生WGD事件时，会产生大量的新的重复基因，这部分重复基因具有某一特殊的同义替换数，在KS分布图上就会显示出一个新的高峰，如图1B所示。
+				.center
+					a(href="html/img/ks_wgd.png",class="lightbox")
+						img(src="html/img/ks_wgd.png",style="width:30%;")
+					h6 理论上的一个基因组中并系同源基因对的age distribution图
+				+my_carousel(ob.wgd,"carousel10","width:60%")
+				p 上图为样品的Ks分布图，有峰表示物种进化过程中发生过WGD事件。
+				div 结果路径：result/*/genome/*.wgd.ks.png, result/*/genome/
+				div 表头说明：
+					a(href="README/README_GENOME.txt") README/README_GENOME.txt
+				h2#result 7 高级信息分析
+				h3#r7 7.1 正向选择的基因分析
+				p 生物形态、行为或是生理上的适应性进化以及物种的分歧最终可归咎于基因和基因组的进化，所以研究自然选择对分子进化的影响就显得尤为重要。另外，由于可以区分同义替换（dS）和非同义替换（dN），研究蛋白编码序列比研究非编码序列或是内含子区域更有利于揭示自然选择在分子进化历程中发挥的作用。一般情况下可以采用非同义替换率和同义替换率的比值（ω = dN / dS）作为蛋白质水平上选择压力的一个度量。如果自然选择不影响适应度（fitness），非同义替换会以与同义替换相同的速率固定于基因组中，如此以来，ω = 1；而ω < 1说明发生了净化选择（purifying selection），ω > 1 则说明发生了正向选择（positive selection）。
+				p 早期的研究采用两条序列比对的方法，在蛋白序列的所有密码子上以及两条序列分歧前整个时间区间内取平均值计算dN和dS。但是，事实上一个功能蛋白的绝大多数的密码子在进化历程中的大多数时间里都处于保守状态。如果发生了正向选择，那么这个正向选择仅仅会影响部分位点并且发生于某个特定的时间段。杨子恒在2002年提出了一种称为Branch-site likelihood的方法，该方法可以检测发生于某一特定进化枝系且仅仅影响到部分位点的正向选择。本研究即采用这种方法检测作用于蛋白编码序列中的正向选择作用。
+				p 一般检测方法：
+				p 1. 从研究物种和相关物种挑选one-to-one orthology蛋白；
+				p 2. 用PRANK比对orthologous蛋白序列；
+				p 3. 使用GUIDANCE或gblocks过滤比对结果；
+				p 4. 排除具有可能造成假阳性结果的蛋白，蛋白特征可用SMART检查；
+				p 5. 采用PAML中的CODEML检验位于特定枝系且仅影响某些位点的正向选择；
+				p 6. 多重假设检验校正；
+				p 在得到受正向选择基因后，还可以进行其他深入分析，包括但不限于GO富集分析、蛋白功能预测和表达量分析，如下图所示：
+				.center
+					img(src="html/img/positive_paper.png",style="width:50%;")
+					h6 文献中正向选择基因分析思路
+				.center
+					img(src="html/img/go_paper.png",style="width:50%;")
+					h6 正向选择基因GO富集分析
+				h3#r8 7.2 物种系统进化树
+				p 分子系统发育，又称为分子进化，是指在分子水平研究物种之间的进化关系，其直接利用从核算序列或者蛋白质序列提取的信息，作为物种的特征，通过比较分子序列之间的关系，构建系统发育树，进而阐明各个物种之间的进化关系。由于全基因组de novo 揭示了物种基因组全部遗传信息，因此对于物种的进化方面的研究提供了重要线索，在分析过程中，依据蛋白家族聚类的结果，可以构建物种进化树。
+				p 对于进化方面研究上不完善的物种，选定各物种单拷贝基因作为参考Marker，选择其中4-fold简并位点构建超基因，对超基因进行多重序列比对，并选择最适合的碱基替代模型，然后利用最大似然法（ML）构建进化树。
+				.center
+					+my_carousel(ob.native_tree,"carousel13","width:60%")
+					h6 物种系统进化树
+				div 结果路径：result/*/tree/*_native_tree.png
+				h3 7.3 物种分化时间估计
+				p 构建分子进化的时间树是理解生物体进化过程的一个重要步骤，有助于了解微观和宏观的生命体进化历程，而且为后续研究由基因重复造成的基因扩张、宿主与病原的协同演化等分析提供依据。
+				p 若提供化石标记，可以使用BEAST软件，在指定系特异性替代模型、树结构模型的情况下利用贝叶斯算法构建时间树。若已有较完整时间树，需要在原有时间树上增添新物种，可以使用MEGA6软件中的RelTime算法构建时间树。
+				.center
+					+my_carousel(ob.time_tree,"carousel14","width:60%")
+					h6 物种系统进化树
+				div 结果路径：result/*/diver/*_time_tree.png
+				div 注：在进化树分析中，得到的进化树分支长度为碱基替换率，经过物种分化时间分析后分支长度为时间，单位为Millon years
+				h3 7.4基因家族收缩&扩张分析
+				p 进化生物学的一个重要目标就是揭示隐藏在表型下的遗传结构。由于物种基因组序列不完善，以前对不同物种间差异的研究，主要集中在同源基因核苷酸水平上的差异。而随着高通量测序和组装技术的发展，以及基因注释信息的完善，可以对物种间较大的遗传差异进行分析。比较基因组学，可以揭示物种间基因家族数目的变化。通常认为基因家族数目的变化与自然选择相关。
+				p cafe是一款用于基因家族分析的软件，它基于随机生存死亡模型并结合统计推断的方法对物种间基因家族的变化进行研究。通过分析，可以得到每个进化分支上基因家族收缩和扩张的数目，以及对每个基因家族是否发生收缩和扩展进行评估。
+				.center
+					+my_carousel(ob.change_tree,"carousel15","width:60%")
+					h6 物种系统进化树
+				div 结果路径：result/*/change/*_change_tree.png
+				div 注：上图表示物种间系统进化树，分支长度为时间单位为兆年，上面的数字表示基因家族发生收缩和扩张的数目，正值表示发生扩张，负值表示发生收缩，上图不同颜色表示在不同分支上的进化速率（λ）
+				h3 7.5全长转录组整合分析（可选）
+				p 由于二代测序技术本身的读长短，在建库的时候需要将转录本打成碎片。在转录本亚型（Transcript isoforms）的组装过程中存在较多的嵌合体（chimeric）错误，对于后续的转录组分析（基因预测、可变剪接、基因家族、表达量分析等）造成了较大影响。
+				p 以PacBio 为代表的三代全长转录组测序无需组装即可获得高质量的单个全长转录本信息，平均读长 10-15Kb，可以轻松跨越从 5´末端到 3´-Poly A tail 的完整转录本，从而准确鉴定异构体，并对可变剪接、融合基因、同源基因、超家族基因或等位基因表达等进行精确分析，亦可深入分析新功能基因或新的异构体。
+				p 获得高质量全长转录本是通过SMRT analysis分析软件中的iso-seq标准化流程实现的。对于上一步获得的ROI（Reads of Insert），按照是否含有3´引物和5´引物，及3´引物前是否含有polyA尾将ROI分为全长转录本和非全长转录本；按照序列内部有无测序引物将ROI分为嵌合转录本和非嵌合转录本；对ROI分类后，取全长非嵌合的转录本进行聚类，去掉一部分冗余的转录本; 为了提高序列的准确性，聚类后的全长非嵌合转录本可以用非全长非嵌合的转录本进行序列矫正，最终获得高质量的全长转录本和低质量的全长转录本。
+				.center
+					img(src="html/img/positive_paper.png",style="width:50%;")
+					h6 全长转录本分析流程
+				h2#tail 8 所用软件及数据库
+				h3#t1 8.1 软件及工具
+				p quake :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.cbcb.umd.edu/software/quake/') (http://www.cbcb.umd.edu/software/quake/)
+				p blasr :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='https://github.com/PacificBiosciences/blasr') (https://github.com/PacificBiosciences/blasr)
+				p proovread :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='https://github.com/BioInf-Wuerzburg/proovread') (https://github.com/BioInf-Wuerzburg/proovread)
+				p PBJelly :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='https://sourceforge.net/projects/pb-jelly/') (https://sourceforge.net/projects/pb-jelly/)
+				p SSPACE-LONGREAD :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE-longread') (http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE-longread)
+				p DISCOVAR :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.broadinstitute.org/software/discovar/blog/?page_id=98') (http://www.broadinstitute.org/software/discovar/blog/?page_id=98)
+				p Platanus :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://platanus.bio.titech.ac.jp/?page_id=180') (http://platanus.bio.titech.ac.jp/?page_id=180)
+				p smartdenovo :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='https://github.com/ruanjue/smartdenovo') (https://github.com/ruanjue/smartdenovo)
+				p jellyfish 2.11 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' http://www.genome.umd.edu/jellyfish.html') ( http://www.genome.umd.edu/jellyfish.html)
+				p bedtools 2-2.19.1 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' https://github.com/arq5x/bedtools2/ ') ( https://github.com/arq5x/bedtools2/ )
+				p Exonerate v2.2.0 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.animalgenome.org/bioinfo/resources/manuals/exonerate/') (http://www.animalgenome.org/bioinfo/resources/manuals/exonerate/)
+				p Augustus v3.2.2 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://augustus.gobics.de/binaries/') (http://augustus.gobics.de/binaries/)
+				p EVM :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='https://sourceforge.net/projects/evidencemodeler/') (https://sourceforge.net/projects/evidencemodeler/)
+				p SNAP :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://snap.stanford.edu/snap/download.html') (http://snap.stanford.edu/snap/download.html)
+				p GeneMark-ESSuite version 4.32 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://topaz.gatech.edu/GeneMark/license_download.cgi') (http://topaz.gatech.edu/GeneMark/license_download.cgi)
+				p Glimmerhmm :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://ccb.jhu.edu/software/glimmerhmm/') (http://ccb.jhu.edu/software/glimmerhmm/)
+				p PASA :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' https://sourceforge.net/projects/pasa/files/stats/timeline') ( https://sourceforge.net/projects/pasa/files/stats/timeline)
+				p blastall 2.2.25 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastNews#1') (http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastNews#1)
+				p KOBAS 2.0 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://kobas.cbi.pku.edu.cn/download.do') (http://kobas.cbi.pku.edu.cn/download.do)
+				p Interproscanv 5.18-57.0 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.ebi.ac.uk/interpro/download.html') (http://www.ebi.ac.uk/interpro/download.html)
+				p samtools 1.1 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' http://samtools.sourceforge.net/ ') ( http://samtools.sourceforge.net/ )
+				p blast-2.2.20 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' http://www.ncbi.nlm.nih.gov/blast/ ') ( http://www.ncbi.nlm.nih.gov/blast/ )
+				p treebest :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' https://github.com/Ensembl/treebest ') ( https://github.com/Ensembl/treebest )
+				p hcluster_sg :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='https://github.com/douglasgscofield/hcluster  ') (https://github.com/douglasgscofield/hcluster  )
+				p orthomcl-version3 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' http://orthomcl.org/orthomcl/ ') ( http://orthomcl.org/orthomcl/ )
+				p mysql-5.1.56 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' https://www.mysql.com/ ') ( https://www.mysql.com/ )
+				p tRNAscan-SE 1.3.1 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' http://lowelab.ucsc.edu/tRNAscan-SE/ ') ( http://lowelab.ucsc.edu/tRNAscan-SE/ )
+				p solar 0.9.6 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' https://github.com/douglasgscofield/solar ') ( https://github.com/douglasgscofield/solar )
+				p Rfam-scan 11.0 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' http://lab.ylog.org/2014/04/09/rfam_scan/ ') ( http://lab.ylog.org/2014/04/09/rfam_scan/ )
+				p circos-0.67-2 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href=' http://circos.ca/ ') ( http://circos.ca/ )
+				p TRF v4.07b :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://tandem.bu.edu/trf/trf407b.linux64.download.html') (http://tandem.bu.edu/trf/trf407b.linux64.download.html)
+				p RepeatScoutv1.0.5 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.repeatmasker.org') (http://www.repeatmasker.org)
+				p PILER v1.0 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.drive5.com/piler') (http://www.drive5.com/piler)
+				p PALS v1.0 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.drive5.com/pals') (http://www.drive5.com/pals)
+				p MUSCLE v3.8.425 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.drive5.com/muscle/downloads.htm') (http://www.drive5.com/muscle/downloads.htm)
+				p RepeatModeler - 1.0.8 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.repeatmasker.org/RepeatModeler.html') (http://www.repeatmasker.org/RepeatModeler.html)
+				p RepeatMaskeropen-4.0.3 :&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.repeatmasker.org/RMDownload.html') (http://www.repeatmasker.org/RMDownload.html)
+				h3#t2 8.2 数据库信息
+				p Rfam 11.0:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='ftp://ftp.ebi.ac.uk/pub/databases/Rfam') (ftp://ftp.ebi.ac.uk/pub/databases/Rfam)
+				p SwissProt:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz') (ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz)
+				p TIGR:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='ftp://ftp.plantbiology.msu.edu/pub/data/TIGR_Plant_Repeats/') (ftp://ftp.plantbiology.msu.edu/pub/data/TIGR_Plant_Repeats/)
+				p RepeatMasker Database:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.girinst.org/server/RepBase/index.php') (http://www.girinst.org/server/RepBase/index.php)
+				p NT:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='ftp://ftp.ncbi.nlm.nih.gov/blast/db/') (ftp://ftp.ncbi.nlm.nih.gov/blast/db/)
+				p NR:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='ftp://ftp.ncbi.nlm.nih.gov/blast/db/') (ftp://ftp.ncbi.nlm.nih.gov/blast/db/)
+				p SwissProt:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz') (ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz)
+				p KEGG:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://www.genome.jp/kegg/') (http://www.genome.jp/kegg/)
+				p GO:&nbsp;&nbsp;&nbsp;&nbsp;
+					a(href='http://geneontology.org/') (http://geneontology.org/)
+				
+				h2#ref 9 参考文献
+				ul
+					li [1] Kelley D R, Schatz M C, Salzberg S L. Quake: quality-aware detection and correction of sequencing errors[J]. Genome biology, 2010, 11(11): 1.
+					li [2] Chaisson M J, Tesler G. Mapping single molecule sequencing reads using basic local alignment with successive refinement (BLASR): application and theory[J]. BMC bioinformatics, 2012, 13(1): 238.
+					li [3] Hackl T, Hedrich R, Schultz J, et al. proovread: large-scale high-accuracy PacBio correction through iterative short read consensus[J]. Bioinformatics, 2014, 30(21): 3004-3011.
+					li [4] English A C, Richards S, Han Y, et al. Mind the gap: upgrading genomes with Pacific Biosciences RS long-read sequencing technology[J]. PloS one, 2012, 7(11): e47768.
+					li [5] Boetzer M, Pirovano W. SSPACE-LongRead: scaffolding bacterial draft genomes using long read sequence information[J]. BMC bioinformatics, 2014, 15(1): 1.
+					li [6] Kajitani R, Toshimoto K, Noguchi H, et al. Efficient de novo assembly of highly heterozygous genomes from whole-genome shotgun short reads[J]. Genome research, 2014, 24(8): 1384-1395.
+					li [7] Li R, Fan W, Tian G, et al. The sequence and de novo assembly of the giant panda genome[J]. Nature, 2010, 463(7279): 311-317.
+					li [8] Korf I. Gene finding in novel genomes[J]. BMC bioinformatics, 2004, 5(1): 1.
+					li [9] Majoros W H, Pertea M, Salzberg S L. TigrScan and GlimmerHMM: two open source ab initio eukaryotic gene-finders[J]. Bioinformatics, 2004, 20(16): 2878-2879.
+					li [10] Stanke M, Steinkamp R, Waack S, et al. AUGUSTUS: a web server for gene finding in eukaryotes[J]. Nucleic acids research, 2004, 32(suppl 2): W309-W312.
+					li [11] Ter-Hovhannisyan V, Lomsadze A, Chernoff Y O, et al. Gene prediction in novel fungal genomes using an ab initio algorithm with unsupervised training[J]. Genome research, 2008, 18(12): 1979-1990.
+					li [12] Haas B J, Salzberg S L, Zhu W, et al. Automated eukaryotic gene structure annotation using EVidenceModeler and the Program to Assemble Spliced Alignments[J]. Genome biology, 2008, 9(1):
+					li [13] McGinnis S, Madden T L. BLAST: at the core of a powerful and diverse set of sequence analysis tools[J]. Nucleic acids research, 2004, 32(suppl 2): W20-W25.
+					li [14] Xie C, Mao X, Huang J, et al. KOBAS 2.0: a web server for annotation and identification of enriched pathways and diseases[J]. Nucleic acids research, 2011, 39(suppl 2): W316-W322.
+					li [15] Zdobnov E M, Apweiler R. InterProScan–an integration platform for the signature-recognition methods in InterPro[J]. Bioinformatics, 2001, 17(9): 847-848.
+					li [16] Quevillon E, Silventoinen V, Pillai S, et al. InterProScan: protein domains identifier[J]. Nucleic acids research, 2005, 33(suppl 2): W116-W120.
+					li [17] Kim D, Langmead B, Salzberg S L. HISAT: a fast spliced aligner with low memory requirements[J]. Nature methods, 2015, 12(4): 357-360.
+					li [18] Roberts A, Pimentel H, Trapnell C, et al. Identification of novel transcripts in annotated genomes using RNA-Seq[J]. Bioinformatics, 2011, 27(17): 2325-2329.
+					li [19] Benson G. Tandem repeats finder: a program to analyze DNA sequences[J]. Nucleic acids research, 1999, 27(2): 573.
+					li [20] Edgar R C, Myers E W. PILER: identification and classification of genomic repeats[J]. Bioinformatics, 2005, 21(suppl 1): i152-i158.
+					li [21] Xu L, Zhang Y, Su Y, et al. Structure and evolution of full-length LTR retrotransposons in rice genome[J]. Plant systematics and evolution, 2010, 287(1-2): 19-28.
+					li [22] Price A L, Jones N C, Pevzner P A. De novo identification of repeat families in large genomes[J]. Bioinformatics, 2005, 21(suppl 1): i351-i358.
+					li [23] Tarailo‐Graovac M, Chen N. Using RepeatMasker to identify repetitive elements in genomic sequences[J]. Current Protocols in Bioinformatics, 2009: 4.10. 1-4.10. 14.
+					li [24] Ouyang S. and Buell C.R. The TIGR Plant Repeat Databases: a collective resource for the identification of repetitive sequences in plants. Nucleic Acids Res. 2004 32(Database issue):D360-3.
+					li [25] Marcais G, Kingsford C. Jellyfish: A fast k-mer counter[J]. 2012.
+					li [26] Schreiber F, Patricio M, Muffato M, et al. TreeFam v9: a new website, more species and orthology-on-the-fly[J]. Nucleic acids research, 2013: gkt1055.
+					li [27] Li L, Stoeckert C J, Roos D S. OrthoMCL: identification of ortholog groups for eukaryotic genomes[J]. Genome research, 2003, 13(9): 2178-2189.
+					li [28] Storz G. An expanding universe of noncoding RNAs[J]. Science, 2002, 296(5571): 1260-1263.
+					li [29] Griffiths-Jones S, Bateman A, Marshall M, et al. Rfam: an RNA family database[J]. Nucleic acids research, 2003, 31(1): 439-441.
+					li [30] Lowe T M, Eddy S R. tRNAscan-SE: a program for improved detection of transfer RNA genes in genomic sequence[J]. Nucleic acids research, 1997, 25(5): 955-964.
+					li [31] Krzywinski M, Schein J, Birol I, et al. Circos: an information aesthetic for comparative genomics[J]. Genome research, 2009, 19(9): 1639-1645.
+					li [32] Wang Y, Tang H, DeBarry J D, et al. MCScanX: a toolkit for detection and evolutionary analysis of gene synteny and collinearity[J]. Nucleic acids research, 2012, 40(7): e49-e49.
+					li [33] Harris R S. Improved pairwise alignment of genomic DNA[M]. ProQuest, 2007.
+					li [34] Delcher A L, Salzberg S L, Phillippy A M. Using MUMmer to identify similar regions in large sequence sets[J]. Current Protocols in Bioinformatics, 2003: 10.3. 1-10.3. 18.
+					li [35] Bailey J A, Eichler E E. Primate segmental duplications: crucibles of evolution, diversity and disease[J]. Nature Reviews Genetics, 2006, 7(7): 552-564.
+					li [36] Bailey J A, Yavor A M, Massa H F, et al. Segmental duplications: organization and impact within the current human genome project assembly[J]. Genome research, 2001, 11(6): 1005-1017.
+					li [37] Lynch M, Conery J S. The evolutionary fate and consequences of duplicate genes[J]. Science, 2000, 290(5494): 1151-1155.
+					li [38] Jiao Y, Wickett N J, Ayyampalayam S, et al. Ancestral polyploidy in seed plants and angiosperms[J]. Nature, 2011, 473(7345): 97-100.
+					li [39] Berthelot C, Brunet F, Chalopin D, et al. The rainbow trout genome provides novel insights into evolution after whole-genome duplication in vertebrates[J]. Nature communications, 2014, 5.
+					li [40] Vanneste K, Van de Peer Y, Maere S. Inference of genome duplications from age distributions revisited[J]. Molecular biology and evolution, 2013, 30(1): 177-190.
+					li [41] Kimura M. Preponderance of synonymous changes as evidence for the neutral theory of molecular evolution[J]. 1977.
+					li [42] Blanc G, Wolfe K H. Widespread paleopolyploidy in model plant species inferred from age distributions of duplicate genes[J]. The Plant Cell, 2004, 16(7): 1667-1678.
+				h2#contact 10 联系我们
+				p 地址：北京市朝阳区京顺东街6号院9号楼
+				p 电话：010-84409706
+				p 邮箱：info@berrygenomics.com		

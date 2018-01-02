@@ -1,0 +1,311 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use File::Basename;
+use Getopt::Long;
+use FindBin qw($Bin $Script);
+use Data::Dumper;
+use Cwd qw(abs_path getcwd realpath);
+
+my ($gene,$type,$up_gene,$down_gene,$outdir);
+my %symbol2ID;
+my %ID2symbol;
+my $kegg_blast;
+
+GetOptions(
+          'up=s'  => \$up_gene,
+          'down=s' => \$down_gene,
+          'out:s'  => \$outdir,
+          'k=s'=>\$kegg_blast,
+          'type:s'=> \$type,
+          'gene=s' => \$gene,
+);
+
+my $usage= <<"USAGE";
+           Program: $0
+
+           Usage: perl $0 [Options]
+
+           Options:
+                  up    :: up regulation gene list
+                  down  :: down regulation gene list
+                  o     :: output directory 
+                  k	:: kegg blast result with format -m 8 
+                  type	:: [1|2] 1 means single sample expression gene, 2 means differential gene,default [2]
+                           -type 2 -up * -down *
+                           -type 1 -gene *
+                  gene	:: each sample gene list 
+                    
+           Example: 
+           perl $0 -type 2 -up /home/R97_case_vs_RY2_ctrl_215_Up.xls -down /home/R97_case_vs_RY2_ctrl_1222_Down.xls -k /KEGG/blast_result/kegg_blast.txt -o ./ 
+           perl $0 -type 1 -gene /home/R97_case_vs_RY2_ctrl_215_Up.xls -k /KEGG/blast_result/kegg_blast.txt  -o ./
+
+USAGE
+
+$outdir||="KEGG_Enrichment";
+$type||=2;
+
+#######################################################
+if (!$kegg_blast || !$outdir){
+	print "$usage\n";
+	exit;
+}
+
+if($type eq "2"){
+	if(!defined $up_gene || !defined $down_gene ){
+		print "$usage\n";
+		exit;
+	}
+}elsif($type eq "1"){
+	if(!defined $gene){
+		print "$usage\n";
+		exit;
+	}
+}
+
+mkdir $outdir unless (-d $outdir);
+$outdir=abs_path($outdir);
+
+#######################################################################
+###Differential expression gene###
+#######################################################################
+
+my (%down,%up);
+if($type eq "2"){
+# Map the up-regulated gene symbols into their ids.
+	my @up_GeneID;
+	open geneSymbol, $up_gene or die;
+	<geneSymbol>;
+	while(<geneSymbol>){
+		chomp;
+		my @symbolLine = split(/\t/, $_);
+		$up{$symbolLine[0]}=1;
+	}
+	close geneSymbol;
+
+# Output the kegg blast result of up-regulated gene to a disk file.
+	mkdir($outdir, 0755);
+	my $up_GeneSymbol = basename $up_gene;
+	$up_GeneSymbol =~ s/(.*?)_\d+(\w+)\.xls/$1$2/;
+	&kegg_blast_result($kegg_blast,\%up,"$outdir/$up_GeneSymbol.blast");
+
+# Map the down-regulated gene symbols into their ids.
+	my @down_GeneID;
+	open geneSymbol, $down_gene or die;
+	<geneSymbol>;
+	while(<geneSymbol>){
+		chomp;
+		my @symbolLine = split(/\t/, $_);
+		$down{$symbolLine[0]}=1;
+	}
+	close geneSymbol;
+
+# Output the kegg blast result of down-regulated gene ids to a disk file.
+	my $down_GeneSymbol = basename $down_gene;
+	$down_GeneSymbol =~ s/(.*?)_\d+(\w+)\.xls/$1$2/;
+	&kegg_blast_result($kegg_blast,\%down,"$outdir/$down_GeneSymbol.blast");
+
+# Kobas pathway enrichment analysis
+chdir $outdir;
+
+!system("python $Bin/annotate.py -i $kegg_blast -t blastout:tab -s ko -o total_kegg.annotate") or die;
+!system("python $Bin/annotate.py -i $up_GeneSymbol.blast -t blastout:tab -s ko -o $up_GeneSymbol.annotate") or die;
+!system("python $Bin/annotate.py -i $down_GeneSymbol.blast -t blastout:tab -s ko -o $down_GeneSymbol.annotate") or die;
+
+!system("python $Bin/identify.py -f $up_GeneSymbol.annotate -b total_kegg.annotate -d K -n BH -o $up_GeneSymbol.identify") or die;
+!system("python $Bin/identify.py -f $down_GeneSymbol.annotate -b total_kegg.annotate -d K -n BH  -o $down_GeneSymbol.identify") or die;
+
+#output ko2gene file and gene2path file
+&parse_annotate("$up_GeneSymbol.annotate");
+&parse_annotate("$down_GeneSymbol.annotate");
+
+#identify file adjust 
+&identify_file_adjust("$up_GeneSymbol.identify");
+&identify_file_adjust("$down_GeneSymbol.identify");
+
+#Barplot printing by R script
+system ("Rscript $Bin/kobas_RNA.R $up_GeneSymbol\_pathway_enrichment.tmp.xls $down_GeneSymbol\_pathway_enrichment.tmp.xls pathway_enrichment.png ");
+
+#add hyperlinks
+system("perl $Bin/hyperlink.pl $up_GeneSymbol\_pathway_enrichment.tmp.xls  $up_GeneSymbol\_pathway_enrichment.xls");
+system("perl $Bin/hyperlink.pl $down_GeneSymbol\_pathway_enrichment.tmp.xls  $down_GeneSymbol\_pathway_enrichment.xls");
+
+#download pathway map#
+&download("$outdir/$up_GeneSymbol.Kegg.ko2gene.xls","$outdir/$up_GeneSymbol\_pathway_enrichment.tmp.xls","$outdir/Up_pathway_map");
+&download("$outdir/$down_GeneSymbol.Kegg.ko2gene.xls","$outdir/$down_GeneSymbol\_pathway_enrichment.tmp.xls","$outdir/Down_pathway_map");
+}
+
+########################################################################
+###single sample expression gene###
+########################################################################
+elsif($type eq "1"){
+	my %gene;
+	my @GeneID;
+	open geneSymbol, $gene or die;
+	<geneSymbol>;
+	while(<geneSymbol>){
+        	my @symbolLine = split(/\t/, $_);
+        	$gene{$symbolLine[0]}=1;
+	}
+	close geneSymbol;
+
+	mkdir($outdir, 0755);
+	my $GeneSymbol = basename $gene;
+	$GeneSymbol =~ s/\.\S+?$//;
+	&kegg_blast_result($kegg_blast,\%gene,"$outdir/$GeneSymbol.blast");
+
+# Kobas pathway enrichment analysis
+chdir $outdir;
+
+!system("python $Bin/annotate.py -i $kegg_blast -t blastout:tab -s ko -o total_kegg.annotate") or die;
+!system("python $Bin/annotate.py -i $GeneSymbol.blast -t blastout:tab -s ko -o $GeneSymbol.annotate") or die;
+!system("python $Bin/identify.py -f $GeneSymbol.annotate -b total_kegg.annotate -d K -n BH -o $GeneSymbol.identify") or die;
+
+#output ko2gene file and gene2path file
+&parse_annotate("$GeneSymbol.annotate");
+
+#Barplot printing by R script
+!system ("Rscript $Bin/kobas_RNA_single.R $GeneSymbol.identify  pathway_enrichment.png ./ 'DiffGene Enrichment'") or die ;
+
+#identify file adjust 
+&identify_file_adjust("$GeneSymbol.identify");
+
+#add hyperlinks
+!system("perl $Bin/hyperlink.pl $GeneSymbol\_pathway_enrichment.tmp.xls  $GeneSymbol\_pathway_enrichment.xls") or die;
+
+#download pathway map
+&download("$outdir/$GeneSymbol.Kegg.ko2gene.xls","$outdir/$GeneSymbol\_pathway_enrichment.tmp.xls","$outdir/pathway_map");
+}
+
+#########################################################
+#                     sub function
+#########################################################
+sub download {
+             my ($ko2gene,$identify,$picdir)=@_;
+             system("ssh login-0-0  perl $Bin/download_blast.pl $ko2gene $identify $picdir") && print "Download pathway graphs have completed!";
+}
+
+sub identify_file_adjust {
+             my ($infile)=@_;
+             my ($prefix)=$infile=~/(\S+?)\.identify/;
+             open IN ,$infile or die;
+             open OUT,">$prefix\_pathway_enrichment.tmp.xls" or die;
+             print OUT "Term\tDatabase\tID\tInput number\tBackground number\tP-Value\tCorrected P-Value\tInput\tHyperlink\n";
+             while(<IN>){
+                chomp;
+                my @gene;
+                next if ($_=~/^#/ || $_=~/^---/ || $_=~/^\s*$/);
+		$_=~s/\|/;/g;
+                print OUT "$_\n";
+            }
+            close IN;
+            close OUT;
+}
+
+sub kegg_blast_result {
+	    my ($infile,$diffGene,$outfile)=@_;
+	    open OUT,">$outfile" or die;
+	    open KEGG,$infile or die;
+	    while(<KEGG>){
+		chomp;
+		my @arr=split /\t/;
+		print OUT "$_\n" if $diffGene->{$arr[0]};
+	    }
+	    close KEGG;
+	    close OUT;
+}
+
+sub sub_gene2ko {
+        my ($info,$ko2gene_out) = @_;
+        my (%gene2ko,%ko2gene);
+        my @kos = split /\n+/,$info;
+        foreach my $info_line (@kos) {
+                $info_line =~ s/^\s+//;
+                $info_line =~ s/\s+$//;
+                next if ($info_line =~ /^$/ || $info_line =~ /^\#/);
+                my ($gene,$ko_info) = split /\t+/,$info_line;
+                next if ($ko_info =~ /None$/);
+                $ko_info =~ s/\|http:.*//;$ko_info=~s/\|(.*)/\($1\)/;
+                push @{$gene2ko{$gene}},$ko_info;
+        }
+	###input ko2gene 
+        foreach my $gene(keys %gene2ko){
+                map { push @{$ko2gene{$_}},$gene} @{$gene2ko{$gene}};
+        }
+
+        open OUT,">$ko2gene_out" or die $!;
+        print OUT "KO_ID(KO_name)\tGenes\n";
+        foreach my $ko(keys %ko2gene){
+                my $gene=join ";",@{$ko2gene{$ko}};
+                print OUT "$ko\t$gene\n";
+        }
+        close OUT;
+        return(\%gene2ko);
+}	
+
+sub gene2path {
+        my ($info,$gene2path_out,$gene2ko) = @_;
+        my (%path,%gene2path);
+        my @infos = split/\/\/\/\//;
+        foreach (@infos) {
+                s/^\s+//;s/\s+$//;
+                next if (/^$/);
+                my @tmp = split /\n+/,$_;
+                next if ($#tmp <= 1);
+                my ($gene,$ko);
+                $gene = (split /\t+/,$tmp[0],2)[1];
+                $ko = (split /\t+/,$tmp[1],2)[1];
+                $gene =~ s/^\s+//; $gene =~ s/\s.*$//;
+                $ko =~ s/^\s+//; $ko =~ s/\s.*$//;	
+
+	 	for (2..$#tmp) {
+                        if ($tmp[$_] =~ /^Pathway:/) {
+                                $tmp[$_] =~ s/^Pathway://;
+                        }
+                        $tmp[$_] =~ s/^\s+//;
+                        next if ($tmp[$_] !~ /KEGG PATHWAY/);
+                        my ($path_name,$path_acc) = (split /\t+/,$tmp[$_])[0,2];
+                        push @{$gene2path{$gene}},"$path_acc//$path_name";
+                }
+        }
+
+        open OUT1,">$gene2path_out" || die $!;
+        print OUT1 "Gene\tKO_ID(KO_name)\tKEGG_Pathway\n";
+	foreach my $gene (keys %{$gene2ko}){
+                push @{$gene2path{$gene}},"-" unless (exists $gene2path{$gene});
+                my $path=join "; ",@{$gene2path{$gene}} ;
+                my $ko=join "; ",@{$gene2ko->{$gene}};
+                print OUT1 "$gene\t$ko\t$path\n";
+        }
+        close OUT1;
+}	
+
+sub parse_annotate {
+	my ($annotate)=@_;
+	my ($prefix)=$annotate=~/(\S+?)\.annotate/;
+	my $ko2gene_file="$prefix.Kegg.ko2gene.xls";
+	my $gene2path_file="$prefix.Kegg.gene2path.xls";
+	open IN,$annotate || die $!;
+	my $part = 0;
+	my $gene2ko;
+	$/="--------------------";
+	while(<IN>){
+        	chomp;
+        	s/^\s+//;s/\s+$//;
+        	next if (/^$/);
+        	$part ++;
+
+        	if ($part == 1) {
+                	$gene2ko = sub_gene2ko($_,$ko2gene_file);#$gene2go is a ref of hash 
+        	}
+        	if ($part == 2) {
+                	&gene2path($_,$gene2path_file,$gene2ko);
+        	}
+        	if ($part > 2) {
+                	print "kobas anno file is wrong! please Check $annotate...\n";
+                	die;
+        	}
+	}
+	close IN;
+	$/="\n"; 
+}
