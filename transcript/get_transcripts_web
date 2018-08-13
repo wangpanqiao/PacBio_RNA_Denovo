@@ -1,0 +1,82 @@
+#!/usr/bin/perl -w
+### 
+### Copyright (c)   BerryGenomics-2016
+### Writer:         chaijingchao <chaijingchao561@berrygenomics.com>
+### Program Date:   2016.07.11
+
+#!/usr/bin/perl
+use warnings;
+use strict;
+use Getopt::Long;
+use FindBin qw ($Bin);
+my $usage =
+"
+Usage:
+
+  Options:
+
+  -h                          Help
+  -output_dir         <str>   output_dir
+  -sample             <str>   the name of sample
+  -sample_cDNA        <str>   the name of sample and cDNA
+  -minfull            <int>   a minimum full pass
+  -minpredit          <int>   minimum predited accuracy
+  -minseq             <int>   a minimum read length
+  -cDNA               <str>   cDNA_size,Estimated cDNA size,the choice is {under1k,between1k2k,between2k3k,above3k}
+  -hq                 <flo>   hq_quiver_min_accuracy,Minimum allowed quiver accuracy to classify an isoform as 
+                              hiqh-quality
+  -info               <str>   the raw data direction
+
+For example:
+        perl $0 -output_dir ./ -sample aaa -sample_cDNA aaa_above3k -minfull 0 -minpredit 75 -minseq 300 -cDNA under1k -hq 0.99 -info info.xls
+";
+
+my($output_dir, $sample, $minfull, $minpredit, $sample_cDNA, $minseq, $cDNA, $hq, $info, $cDNA_label, $help);
+GetOptions(
+        "output_dir=s" => \$output_dir,
+        "sample=s" => \$sample,
+        "minfull=i" => \$minfull,
+        "minpredit=i" => \$minpredit,
+        "sample_cDNA=s" => \$sample_cDNA,
+        "minseq=i" => \$minseq,
+        "cDNA=s" => \$cDNA,
+        "hq=f" => \$hq,
+        "info=s" => \$info,
+        "h|help"=>\$help
+);
+if(!$output_dir || !$sample || !$minpredit || !$sample_cDNA || !$minseq || !$cDNA || !$hq || $help){
+        die "$usage\n";
+}
+if($cDNA eq "under1k"){
+        $cDNA_label = "0-1k";
+}elsif($cDNA eq "between1k2k"){
+        $cDNA_label = "1-2k";
+}elsif($cDNA eq "between2k3k"){
+        $cDNA_label = "2-3k";
+}elsif($cDNA eq "above3k"){
+        $cDNA_label = "above3k";
+}
+system("mkdir $output_dir/Transcript") unless (-e "$output_dir/Transcript");
+system("mkdir $output_dir/Transcript/$sample") unless (-e "$output_dir/Transcript/$sample");
+system("mkdir $output_dir/Transcript/$sample/$sample_cDNA") unless (-e "$output_dir/Transcript/$sample/$sample_cDNA");
+
+open INFO, ">$output_dir/Transcript/$sample/$sample_cDNA/input.fofn" or die "Cannot open input.fofn: $!";
+print INFO "$info";
+close INFO;
+
+open SH,">$output_dir/Transcript/$sample/$sample_cDNA/transcript_$sample_cDNA.sh";
+print SH "echo ===start at : `date` ===\n";
+print SH "$Bin/smrtanalysis_set --input $Bin/settings.xml --minfull $minfull --minpredit $minpredit --minseq $minseq --cDNA $cDNA --hq $hq --output $output_dir/Transcript/$sample/$sample_cDNA/settings.xml && \\\n";
+print SH"$Bin/fofnToSmrtpipeInput $output_dir/Transcript/$sample/$sample_cDNA/input.fofn >$output_dir/Transcript/$sample/$sample_cDNA/input.xml && \\\n";
+print SH ". \$(/share/work2/staff/zhanghk/software/smrt/install/smrtanalysis_2.3.0.140936/admin/bin/getsetupfile) && /share/work2/staff/zhanghk/software/smrt/install/smrtanalysis_2.3.0.140936/admin/bin/checktmpdir --verbose --create --dir $output_dir/Transcript/$sample/$sample_cDNA/tmp && export MPLCONFIGDIR=/share/work2/staff/zhanghk/software/smrt/userdata/jobs/.matplotlib && ([[ ! -e /share/work2/staff/zhanghk/software/smrt/userdata/jobs/.matplotlib ]] && mkdir /share/work2/staff/zhanghk/software/smrt/userdata/jobs/.matplotlib ) || true && smrtpipe.py -D TMP=$output_dir/Transcript/$sample/$sample_cDNA/tmp --nohtml  --distribute  --params=$output_dir/Transcript/$sample/$sample_cDNA/settings.xml --output=$output_dir/Transcript/$sample/$sample_cDNA xml:$output_dir/Transcript/$sample/$sample_cDNA/input.xml 2>$output_dir/Transcript/$sample/$sample_cDNA/smrtpipe.stderr 1> $output_dir/Transcript/$sample/$sample_cDNA/smrtpipe.stdout || touch $output_dir/Transcript/$sample/$sample_cDNA/failed\n";
+print SH "export PYTHONPATH=/share/software/software/python-2.7_install_dir/lib/python2.7/site-packages:\$PYTHONPATH\n$Bin/stat_length --in $output_dir/Transcript/$sample/$sample_cDNA/data/reads_of_insert.fasta --out $output_dir/Transcript/$sample/$sample_cDNA/roi_length.xls --cDNA $cDNA_label\n$Bin/stat_length --in $output_dir/Transcript/$sample/$sample_cDNA/data/isoseq_flnc.fasta --out $output_dir/Transcript/$sample/$sample_cDNA/flnc_length.xls --cDNA $cDNA_label\n$Bin/stat_length --in $output_dir/Transcript/$sample/$sample_cDNA/data/consensus_isoforms.fasta --out $output_dir/Transcript/$sample/$sample_cDNA/consensus_length.xls --cDNA $cDNA_label\n";
+print SH "if [ ! -f $output_dir/Transcript/$sample/$sample\_consensus_isoforms.fasta ]; then\ntouch $output_dir/Transcript/$sample/$sample\_consensus_isoforms.fasta\nfi\ncat $output_dir/Transcript/$sample/$sample_cDNA/data/polished_high_qv_consensus_isoforms.fasta >> $output_dir/Transcript/$sample/$sample\_consensus_isoforms.fasta\n";
+#print SH "sed -i 's/\\\//_/g' $output_dir/Transcript/$sample/$sample\_consensus_isoforms.fasta\n";
+#print SH "sed -i 's/^>/>${sample}_/g' $output_dir/Transcript/$sample/$sample\_consensus_isoforms.fasta\n";
+print SH "if [ ! -f $output_dir/Transcript/$sample/$sample\_roi_length.xls ]; then\ntouch $output_dir/Transcript/$sample/$sample\_roi_length.xls\nfi\ncat $output_dir/Transcript/$sample/$sample_cDNA/roi_length.xls >> $output_dir/Transcript/$sample/$sample\_roi_length.xls\n";
+print SH "if [ ! -f $output_dir/Transcript/$sample/$sample\_flnc_length.xls ]; then\ntouch $output_dir/Transcript/$sample/$sample\_flnc_length.xls\nfi\ncat $output_dir/Transcript/$sample/$sample_cDNA/flnc_length.xls >> $output_dir/Transcript/$sample/$sample\_flnc_length.xls\n";
+print SH "if [ ! -f $output_dir/Transcript/$sample/$sample\_consensus_length.xls ]; then\ntouch $output_dir/Transcript/$sample/$sample\_consensus_length.xls\nfi\ncat $output_dir/Transcript/$sample/$sample_cDNA/consensus_length.xls >> $output_dir/Transcript/$sample/$sample\_consensus_length.xls\n";
+print SH "source ~/.bashrc\n$Bin/classify_pie -in $output_dir/Transcript/$sample/$sample_cDNA/data/classify_summary.txt -out $output_dir/Transcript/$sample/$sample_cDNA/$sample_cDNA\_classify_pie \n";
+print SH "echo \"Transcript finish\" >$sample_cDNA\_transcript.mark\n";
+print SH "echo ===end at : `date` ===\n";
+close SH;

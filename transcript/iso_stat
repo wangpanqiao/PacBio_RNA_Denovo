@@ -1,4 +1,4 @@
-# !/usr/bin/env pyhton
+#!/share/public/software/Python-2.7.13/bin/python
 # coding=utf-8
 # Writer:         chaijingchao
 # Program Date:   2016.08.11
@@ -16,14 +16,15 @@ indir = argv["indir"]
 outdir = argv["outdir"]
 dic = {}
 cDNA = j.split(",")
-out_roi = open((outdir + "/" + i + "_roi_stat.xls"),"w")
+out_roi = open((outdir + "/ROI/" + i + "/" + i + "_roi_stat.xls"),"w")
 out_roi.write("Sample\tcDNA size\tReads of Insert\tRead Bases of Insert\tMean Read Length of Insert\tMean Read Quality of Insert\tMean Number of Passes\n")
-out_classify = open((outdir + "/" + i + "_classify_stat.xls"),"w")
+out_classify = open((outdir + "/Classify/" + i + "/" + i + "_classify_stat.xls"),"w")
 out_classify.write("Sample\tcDNA size\tNumber of reads of insert\tNumber of five prime reads\tNumber of three prime reads\tNumber of poly-A reads\tNumber of filtered short reads\tNumber of non-full-length reads\tNumber of full-length reads\tNumber of full-length non-chimeric reads\tFull-Length Percentage (FL%)\tAverage full-length non-chimeric read length\n")
-out_cluster = open((outdir + "/" + i + "_cluster_stat.xls"),"w")
-out_cluster.write("Sample\tcDNA size\tNumber of unpolished consensus isoforms\tNumber of polished high-quality isoforms\tNumber of polished low-quality isoforms\tMean unpolished consensus isoforms read length\n")
+out_cluster = open((outdir + "/Cluster/" + i + "/" + i + "_cluster_stat.xls"),"w")
+out_cluster.write("Sample\tcDNA size\tNumber of consensus isoforms\tAverage consensus isoforms read length\tNumber of polished high-quality isoforms\tNumber of polished low-quality isoforms\n")
 for each in cDNA:
-    iso_dir = indir + i + "/" + i + "_" + each + "/results"
+#    iso_dir = indir + "/Transcript/" + i + "/" + i + "_" + each + "/results"
+    iso_dir = indir + "/Transcript/" + i + "/" + i + "_" + each
     f1 = open(iso_dir + "/reads_of_insert_report.json")
     s1 = json.load(f1)
     roi_number_reads = s1["attributes"][0]["value"]

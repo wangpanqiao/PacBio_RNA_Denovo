@@ -1,0 +1,55 @@
+#!/usr/bin/perl
+# Writer:         chaijingchao
+# Program Date:   2016.11.16
+
+use warnings;
+use strict;
+use Getopt::Long;
+my $usage =
+"
+Usage:
+
+  Options:
+
+  -h          Help
+  -indir      The direction of mulsamples data.
+  -name       The name of inputfile.
+  -sample     The mulsamlples name, separated by comma.
+  -outfile    The outfile.
+";
+
+my($indir, $name, $sample, $outfile, $help, @samples);
+GetOptions(
+          "indir=s" => \$indir,
+          "name=s" => \$name,
+          "sample=s" => \$sample,
+          "outfile=s" => \$outfile,
+          "help|h=s" => \$help
+);
+if(!$indir || !$name || !$sample || !$outfile || $help){
+        die "$usage\n";
+}
+
+@samples =split /,/,$sample;
+my $sample1 = $indir."/".$samples[0]."/".$samples[0]."_".$name;
+open SAMPLE1, "<$sample1";
+my $title = <SAMPLE1>;
+open OUT,">$outfile";
+print OUT "$title";
+foreach my $each (@samples){
+        my $input = $indir."/".$each."/".$each."_".$name;
+        open IN, "<$input";
+        my @data = <IN> ;
+        shift @data;
+        my $info = join("\n", @data);
+        print OUT "$info";
+        close IN;
+}
+close OUT;
+
+
+
+
+
+         
+

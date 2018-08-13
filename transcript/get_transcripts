@@ -1,0 +1,119 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+use Getopt::Long;
+use FindBin qw ($Bin);
+
+my($output_dir, $sample, $minfull, $minpredit, $sample_cDNA, $minseq, $maxseq, $cDNA, $hq, $bam, $xml, $help);
+GetOptions(
+        "output_dir=s" => \$output_dir,
+        "sample=s" => \$sample,
+        "minfull=i" => \$minfull,
+        "minpredit=f" => \$minpredit,
+        "sample_cDNA=s" => \$sample_cDNA,
+        "minseq=i" => \$minseq,
+        "cDNA=s" => \$cDNA,
+        "hq=f" => \$hq,
+        "bam=s" => \$bam,
+	"xml=s" => \$xml,
+        "h|help"=>\$help
+);
+&usage if(!$output_dir || !$sample || !$minpredit || !$sample_cDNA || !$minseq || !$cDNA || !$hq || !$bam || !$xml || $help);
+if (0)
+	if($cDNA eq "0-1k"){
+		$maxseq = 3000;
+	}
+	elsif($cDNA eq "1-2k"){
+		$maxseq = 5000;
+	}
+	elsif($cDNA eq "2-3k"){
+		$maxseq = 7000;
+	}
+	elsif($cDNA eq "1-4k"){
+		$maxseq = 10000;
+	}
+	elsif($cDNA eq "3-6k"){
+		$maxseq = 15000;
+	}
+	elsif($cDNA eq "1-5k"){	$maxseq = 14000;}
+	elsif($cDNA eq "1-6k"){ $maxseq = 15000;}
+	elsif($cDNA eq "4-10k"){ $maxseq = 20000;}
+	elsif($cDNA eq "5-10k"){ $maxseq = 20000;}
+}else{                                       #20180604
+	if ($cDNA=~/\d+-(\d+)k/i) {
+		$maxseq=$1*2000+1000;
+	}else{
+		die "check \$cDNA\n";
+	}
+}
+system("mkdir $output_dir/Transcript") unless (-e "$output_dir/Transcript");
+system("mkdir $output_dir/Transcript/$sample") unless (-e "$output_dir/Transcript/$sample");
+system("mkdir $output_dir/Transcript/$sample/$sample_cDNA") unless (-e "$output_dir/Transcript/$sample/$sample_cDNA");
+
+open DATA, ">$output_dir/Transcript/sample_data.xls" or die "Cannot open sample_data.xls: $!";
+print DATA "Samples\tCell number\tcDNA Size\tPolymerase Read Bases\tPolymerase Reads    Polymerase Read N50\tPolymerase Read Length\tPolymerase Read Quality\n";
+close DATA;
+
+my $smrt_link = "/share/public/software/smrtlink_5_install/smrtlink/smrtcmds/bin";
+#my $report = "/share/public/software/smrtlink_4_install/install/smrtlink-fromsrc_4.0.0.190159+190159-190159-189856-189856-189856/bundles/smrttools/install/smrttools-fromsrc_4.0.0.190159/private/pacbio/pythonpkgs/pbreports/bin";
+my $report = "/share/public/software/smrtlink_5_install/smrtlink/install/smrtlink-release_5.0.1.9585/bundles/smrttools/install/smrttools-release_5.0.1.9578/private/pacbio/pythonpkgs/pbreports/bin";
+
+open SH,">$output_dir/Transcript/$sample/$sample_cDNA/transcript.sh";
+print SH "echo ===start at : `date` ===\n";
+print SH "source /share/public/pipeline/RNA/config/bashrc_RNA_seq_pacbio\n";
+print SH "export PYTHONPATH=\"\" &&\\\n";
+print SH "#getting CCS (circular consensus sequence) reads out of subreads BAM file..\n";
+print SH "$smrt_link/ccs --minLength=$minseq --maxLength=$maxseq --minPasses=$minfull --minZScore=-9999 --maxDropFraction=0.8 --minPredictedAccuracy=$minpredit --minSnr=3.75 --numThreads 20 $bam $output_dir/Transcript/$sample/$sample_cDNA/ccs.bam && $smrt_link/python $report/ccs_report $output_dir/Transcript/$sample/$sample_cDNA/ccs.bam $output_dir/Transcript/$sample/$sample_cDNA/reads_of_insert_report.json -o $output_dir/Transcript/$sample/$sample_cDNA && $smrt_link/dataset create --type ConsensusReadSet $output_dir/Transcript/$sample/$sample_cDNA/ccs.xml $output_dir/Transcript/$sample/$sample_cDNA/ccs.bam && $smrt_link/bam2fasta -o $output_dir/Transcript/$sample/$sample_cDNA/ccs $output_dir/Transcript/$sample/$sample_cDNA/ccs.bam && gunzip $output_dir/Transcript/$sample/$sample_cDNA/ccs.fasta.gz && \\\n";
+print SH "#identifying full-length CCS reads based on cDNA primers and polyA tail signal..\n";
+print SH "$smrt_link/pbtranscript classify --summary isoseq_draft.classify_summary.json --flnc $output_dir/Transcript/$sample/$sample_cDNA/isoseq_flnc.fasta --nfl $output_dir/Transcript/$sample/$sample_cDNA/isoseq_nfl.fasta --cpus 20 $output_dir/Transcript/$sample/$sample_cDNA/ccs.xml $output_dir/Transcript/$sample/$sample_cDNA/isoseq_draft.fasta && $smrt_link/python $report/isoseq_classify_report $output_dir/Transcript/$sample/$sample_cDNA/isoseq_flnc.fasta $output_dir/Transcript/$sample/$sample_cDNA/isoseq_draft.classify_summary.json isoseq_classify.json && \\\n";
+print SH "#isoform-level clustering and polishing to generate high-quality, full-length, transcript isoform sequences..\n";
+print SH "$smrt_link/pbtranscript cluster $output_dir/Transcript/$sample/$sample_cDNA/isoseq_flnc.fasta $output_dir/Transcript/$sample/$sample_cDNA/consensus_isoforms.fasta --nfl_fa $output_dir/Transcript/$sample/$sample_cDNA/isoseq_nfl.fasta --bas_fofn $xml --ccs_fofn $output_dir/Transcript/$sample/$sample_cDNA/ccs.xml --quiver --blasr_nproc 30 --quiver_nproc 20 --hq_quiver_min_accuracy $hq --qv_trim_5 100 --qv_trim_3 30 --hq_isoforms_fa $output_dir/Transcript/$sample/$sample_cDNA/polished_high_qv_consensus_isoforms.fasta --hq_isoforms_fq $output_dir/Transcript/$sample/$sample_cDNA/polished_high_qv_consensus_isoforms.fastq --lq_isoforms_fa $output_dir/Transcript/$sample/$sample_cDNA/polished_low_qv_consensus_isoforms.fasta --lq_isoforms_fq $output_dir/Transcript/$sample/$sample_cDNA/polished_low_qv_consensus_isoforms.fastq --summary $output_dir/Transcript/$sample/$sample_cDNA/isoseq_draft.cluster_summary.json && $smrt_link/python $report/isoseq_cluster_report $output_dir/Transcript/$sample/$sample_cDNA/consensus_isoforms.fasta $output_dir/Transcript/$sample/$sample_cDNA/polished_high_qv_consensus_isoforms.fastq $output_dir/Transcript/$sample/$sample_cDNA/polished_low_qv_consensus_isoforms.fastq $output_dir/Transcript/$sample/$sample_cDNA/isoseq_draft.cluster_summary.json $output_dir/Transcript/$sample/$sample_cDNA/isoseq_cluster.json\n";
+
+print SH "sed -i 's/ .*//g' $output_dir/Transcript/$sample/$sample_cDNA/polished_high_qv_consensus_isoforms.fasta && \\\n";
+print SH "sed -i 's/^>/>$sample\_$cDNA\_/g' $output_dir/Transcript/$sample/$sample_cDNA/polished_high_qv_consensus_isoforms.fasta && \\\n";
+print SH "sed -i 's/ .*//g' $output_dir/Transcript/$sample/$sample_cDNA/polished_low_qv_consensus_isoforms.fasta && \\\n";
+print SH "sed -i 's/^>/>$sample\_$cDNA\_/g' $output_dir/Transcript/$sample/$sample_cDNA/polished_low_qv_consensus_isoforms.fasta && \\\n";
+
+print SH "#stat the length of ccs、full-length transcript and consensus_isoforms..\n";
+print SH "export PYTHONPATH=/share/public/software/Python-2.7.13/lib/python2.7/site-packages:\$PYTHONPATH && \\\n";
+print SH "$Bin/stat_length --in $output_dir/Transcript/$sample/$sample_cDNA/ccs.fasta --out $output_dir/Transcript/$sample/$sample_cDNA/ccs_length.xls --cDNA $cDNA\n$Bin/stat_length --in $output_dir/Transcript/$sample/$sample_cDNA/isoseq_flnc.fasta --out $output_dir/Transcript/$sample/$sample_cDNA/flnc_length.xls --cDNA $cDNA\n$Bin/stat_length --in $output_dir/Transcript/$sample/$sample_cDNA/consensus_isoforms.fasta --out $output_dir/Transcript/$sample/$sample_cDNA/consensus_length.xls --cDNA $cDNA\n";
+print SH "if [ ! -f $output_dir/Transcript/$sample/$sample\_ccs_length.xls ]; then\ntouch $output_dir/Transcript/$sample/$sample\_roi_length.xls\nfi\ncat $output_dir/Transcript/$sample/$sample_cDNA/ccs_length.xls >> $output_dir/Transcript/$sample/$sample\_roi_length.xls\n";
+print SH "if [ ! -f $output_dir/Transcript/$sample/$sample\_flnc_length.xls ]; then\ntouch $output_dir/Transcript/$sample/$sample\_flnc_length.xls\nfi\ncat $output_dir/Transcript/$sample/$sample_cDNA/flnc_length.xls >> $output_dir/Transcript/$sample/$sample\_flnc_length.xls\n";
+print SH "if [ ! -f $output_dir/Transcript/$sample/$sample\_consensus_length.xls ]; then\ntouch $output_dir/Transcript/$sample/$sample\_consensus_length.xls\nfi\ncat $output_dir/Transcript/$sample/$sample_cDNA/consensus_length.xls >> $output_dir/Transcript/$sample/$sample\_consensus_length.xls\n";
+print SH "#cat the different size polished sequence..\n";
+print SH "if [ ! -f $output_dir/Transcript/$sample/$sample\_polished_high_qv_consensus_isoforms.fasta ]; then\ntouch $output_dir/Transcript/$sample/$sample\_polished_high_qv_consensus_isoforms.fasta\nfi\ncat $output_dir/Transcript/$sample/$sample_cDNA/polished_high_qv_consensus_isoforms.fasta >> $output_dir/Transcript/$sample/$sample\_polished_high_qv_consensus_isoforms.fasta\n";
+print SH "if [ ! -f $output_dir/Transcript/$sample/$sample\_polished_low_qv_consensus_isoforms.fasta ]; then\ntouch $output_dir/Transcript/$sample/$sample\_polished_low_qv_consensus_isoforms.fasta\nfi\ncat $output_dir/Transcript/$sample/$sample_cDNA/polished_low_qv_consensus_isoforms.fasta >> $output_dir/Transcript/$sample/$sample\_polished_low_qv_consensus_isoforms.fasta\n";
+print SH "#plot the pie chart of classify..\n";
+print SH "source ~/.bashrc\n";
+print SH "perl $Bin/classify_pie_json -in $output_dir/Transcript/$sample/$sample_cDNA/isoseq_draft.classify_summary.json -out $output_dir/Transcript/$sample/$sample_cDNA/$sample_cDNA\_classify_pie \n";
+print SH "echo \"Transcript finish\" >$sample_cDNA\_transcript.mark\n";
+print SH "echo ===end at : `date` ===\n";
+close SH;
+
+sub usage{
+        my $info = <<INFO;
+Example: 
+        perl $0
+Description: 
+	get the full length transcripts using smrt link
+Usage : 
+        Options :
+		-output_dir         <str>   output_dir
+  		-sample             <str>   the name of sample
+  		-sample_cDNA        <str>   the name of sample and cDNA
+  		-minfull            <int>   a minimum full pass
+  		-minpredit          <flo>   minimum predited accuracy
+  		-minseq             <int>   a minimum read length
+  		-cDNA               <str>   cDNA_size,Estimated cDNA size,the choice is {under1k,between1k2k,between2k3k,above3k}
+  		-hq                 <flo>   hq_quiver_min_accuracy,Minimum allowed quiver accuracy to classify an isoform as hiqh-quality
+  		-bam                <str>   the direction of subreads.bam
+		-xml		    <str>   the direction of subreads.xml
+		-h|help             <str>   show this help information
+Email:
+        chaijingchao561\@berrygenomics.com
+        2016.12,14
+        version-1.0
+INFO
+        die $info;
+}
+

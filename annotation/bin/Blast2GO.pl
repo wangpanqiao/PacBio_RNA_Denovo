@@ -51,7 +51,7 @@ foreach my $file (@files) {
 close SH;
 
 if ($step==1) {
-	&Shell_qsub("$worksh/blast2go.sh","all.q",$cpu,$worksh);
+	&Shell_qsub("$worksh/blast2go.sh","scr.q,all.q",$cpu,$worksh);
 	$step=2;
 }
 

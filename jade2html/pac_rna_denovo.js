@@ -97,7 +97,7 @@ function getFiles(dir,result){
 		if (fs.statSync(name).isDirectory()){
 			getFiles(name,result);
 		}else{
-			if (name.search(/PacBio_rawdata.1.png/)!=-1){
+			if (name.search(/PacBio_rawdata.png/)!=-1){
 				result.PacBio_rawdata.push(name.replace(/\\/g,"/"));
 			}
 			else if (name.search(/roi_stat.xls/)!=-1){
@@ -214,9 +214,6 @@ function getFiles(dir,result){
 		//	else if (name.search(/cytoscape_network\/.+.png/)!=-1){
 		//		result.cytoscape_network.push(name.replace(/\\/g,"/"));
 		//	}
-			else if (name.search(/roi_length_density.png/)!=-1){
-				result.roi_length_density.push(name.replace(/\\/g,"/"));
-			}
 		}
 	}
 }
@@ -227,7 +224,6 @@ results.roi_readlength_hist=[];
 results.roi_accuracy_hist=[];
 results.roi_npasses_histl4=[];
 results.roi_length_density=[];
-
 results.PacBio_rawdata=[];
 results.cluster_summary=[];
 results.ssr_density=[];
@@ -249,7 +245,6 @@ results.align_summary=[];
 results.genes=[];
 results.gene2path=[];
 results.PacBio_sample=[];
-results.roi_length_density=[];
 results.flnc_length_density=[];
 results.consensus_length_density=[];
 results.group=[];
@@ -257,21 +252,22 @@ results.lncRNA_length_cout=[];
 results.KEGG_classification=[];
 results.pathway_enrichment=[];
 results.KEGG_ko=[];
+results.AS=[];
 results.PCA=[];
 results.profile=[];
 results.sampleClustering=[];
 results.genes_clustering_dendrogram=[];
 results.Module_trait_associations=[];
 results.cytoscape_network=[];
-results.AS=[];
+
 
 chdir(path.dirname(workdir));
 getFiles(path.basename(workdir),results);
-fs.writeFile(dir2+"data.json", JSON.stringify(results), 'utf8', function(e){
-	if(e)
-		throw e;
+//fs.writeFile(dir2+"data.json", JSON.stringify(results), 'utf8', function(e){
+//	if(e)
+//		throw e;
 	//fs.closeSync(fd);
-});
+//});
 //console.log(JSON.stringify(results.result,null, '\t'));
 var config = require(current_dir+"/base_info.json");
 

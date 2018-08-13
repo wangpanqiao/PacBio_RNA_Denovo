@@ -1,0 +1,14 @@
+/share/cifs2/pacbio/314/r54180_171129_001/r54180_20171129_063633/2_B01/
+├── m54180_171129_144622.adapters.fasta
+├── m54180_171129_144622.baz2bam_1.log
+├── m54180_171129_144622.scraps.bam
+├── m54180_171129_144622.scraps.bam.pbi
+├── m54180_171129_144622.sts.xml
+├── m54180_171129_144622.subreads.bam
+├── m54180_171129_144622.subreads.bam.pbi
+├── m54180_171129_144622.subreadset.xml
+├── m54180_171129_144622.transferdone
+├── tmp-file-f3b1767b-e83b-4f8a-977d-82f3dc14ef91.txt
+└── tmp-file-fa87e654-e9af-4c42-99b7-3e601889da36.txt
+
+0 directories, 11 files

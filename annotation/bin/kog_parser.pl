@@ -98,7 +98,8 @@ while (<IN>) {
 	s/\s+$//;
 	next if (/^$/);
 	my @t = split /\t/,$_;
-	print OUT "$t[0]\t$t[4]\t$t[13]\t$t[8]\t$t[12]\t$KOG{$t[4]}\n" if (exists $KOG{$t[4]});
+	#print OUT "$t[0]\t$t[4]\t$t[13]\t$t[8]\t$t[12]\t$KOG{$t[1]}\n" if (exists $KOG{$t[1]}); #$KOG{$t[4]} => $KOG{$t[1]}
+	print OUT "$t[0]\t$t[1]\t$t[10]\t$t[2]\t$t[11]\t$KOG{$t[1]}\n" if (exists $KOG{$t[1]});
 }
 close OUT;
 close IN;

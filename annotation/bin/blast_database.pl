@@ -29,7 +29,7 @@ GetOptions(
 	"help"=>\$Help
 );
 
-$Queue ||= "all.q";
+$Queue ||= "general.q";
 
 ###############Time
 my $BEGIN=time();
@@ -58,21 +58,33 @@ my $blast_shell_file = "$dir/work_sh/$seq_file_name.blast.sh";
 my @subfiles;
 @subfiles = glob("$dir/$seq_file_name.div/*.fa");
 
+my $mark_diamond=$blastallP=~s/diamond-//i;
 ############creat shell file
 open OUT,">$blast_shell_file" || die "fail $blast_shell_file";
 foreach my $subfile (@subfiles) {
-	print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $nr_path -i $subfile -m 7 -a 2 -o $subfile.NR.blast.xml && \n" if(defined $Nr);
-	print OUT "/share/public/software/blast/blast-2.6.0/ncbi-blast-2.6.0+/bin/blastn  -evalue $Evalue -num_threads 16 -outfmt 0  -db $nt_path -query $subfile  -out $subfile.NT.blast && \n" if(defined $Nt);
-	print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $swissprot_path -i $subfile -m 7 -a 2 -o $subfile.Swissprot.blast.xml && \n" if(defined $Swissprot);
-	print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $trembl_path -i $subfile -a 2 -o $subfile.TrEMBL.blast && \n" if(defined $TrEMBL);
-	print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $kegg_path -i $subfile -m 9 -a 2 -o $subfile.KEGG.blast.tab && \n" if(defined $Kegg);
-	print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $cog_path -i $subfile -a 2 -o $subfile.COG.blast && \n" if(defined $Cog);
-	print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $kog_path -i $subfile -a 2 -o $subfile.KOG.blast && \n" if(defined $Kog);
+	#print OUT "
+#	print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p blastn -e $Evalue -F F -d $nt_path -i $subfile -a 2 -o $subfile.NT.blast && \n" if(defined $Nt);
+	print OUT "/share/public/software/blast/blast-2.6.0/ncbi-blast-2.6.0+/bin/blastn -query $subfile -db $nt_path -out $subfile.NT.blast -evalue $Evalue -num_threads 16 -outfmt 0 && \n " if(defined $Nt);
+	if ($mark_diamond) {
+		print OUT "/share/work3/zhangsc/software/miniconda2/bin/diamond $blastallP --max-target-seqs 100 -e $Evalue -d $nr_path -q $subfile -f 5 -p 2 -o $subfile.NR.blast.xml && \n" if(defined $Nr);
+		print OUT "/share/work3/zhangsc/software/miniconda2/bin/diamond $blastallP --max-target-seqs 100 -e $Evalue -d $swissprot_path -q $subfile -f 5 -p 2 -o $subfile.Swissprot.blast.xml && \n" if(defined $Swissprot);
+		print OUT "/share/work3/zhangsc/software/miniconda2/bin/diamond $blastallP --max-target-seqs 100 -e $Evalue -d $trembl_path    -q $subfile -f 6 -p 2 -o $subfile.TrEMBL.blast.tab && \n" if(defined $TrEMBL);
+		print OUT "/share/work3/zhangsc/software/miniconda2/bin/diamond $blastallP --max-target-seqs 100 -e $Evalue -d $kegg_path      -q $subfile -f 6 -p 2 -o $subfile.KEGG.blast.tab && \n" if(defined $Kegg);
+		print OUT "/share/work3/zhangsc/software/miniconda2/bin/diamond $blastallP --max-target-seqs 100 -e $Evalue -d $cog_path       -q $subfile -f 6 -p 2 -o $subfile.COG.blast.tab && \n" if(defined $Cog);
+		print OUT "/share/work3/zhangsc/software/miniconda2/bin/diamond $blastallP --max-target-seqs 100 -e $Evalue -d $kog_path       -q $subfile -f 6 -p 2 -o $subfile.KOG.blast.tab && \n" if(defined $Kog);
+	}else{
+		print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $nr_path -i $subfile -m 7 -a 2 -o $subfile.NR.blast.xml && \n" if(defined $Nr);
+		print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $swissprot_path -i $subfile -m 7 -a 2 -o $subfile.Swissprot.blast.xml && \n" if(defined $Swissprot);
+		print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $trembl_path -i $subfile -a 2 -o $subfile.TrEMBL.blast && \n" if(defined $TrEMBL);
+		print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $kegg_path -i $subfile -m 9 -a 2 -o $subfile.KEGG.blast.tab && \n" if(defined $Kegg);
+		print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $cog_path -i $subfile -a 2 -o $subfile.COG.blast && \n" if(defined $Cog);
+		print OUT "/share/public/software/blast/blast-2.2.20/bin/blastall -b 100 -v 100 -p $blastallP -e $Evalue -F F -d $kog_path -i $subfile -a 2 -o $subfile.KOG.blast && \n" if(defined $Kog);
+	}
 }
 close OUT;
 
 ####################run the shell file
-&Cut_shell_qsub("$blast_shell_file",$Cpu,"10G","$Queue");
+&Cut_shell_qsub("$blast_shell_file",$Cpu,"6G","scr.q,all.q");
 
 ####################
 

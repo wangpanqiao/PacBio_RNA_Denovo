@@ -32,7 +32,9 @@ while (<SAMPLES>) {
         s/\r$//;
         next if (/^\#/ or /^$/);
         my @array = split /\t/, $_;
-        if(-e "$out/result/IsoSeq/$array[0]/$array[0]_$array[1]/input.fofn") {system("rm -r $out/result/IsoSeq/$array[0]/$array[0]_$array[1]/input.fofn");}
+        if(-e "$out/result/IsoSeq/$array[0]/$array[0]_$array[1]/input.fofn") {
+			system("rm -r $out/result/IsoSeq/$array[0]/$array[0]_$array[1]/input.fofn");
+		}
 }
 close SAMPLES;
 open SAMPLES, "$infile";
@@ -61,24 +63,30 @@ while (<SAMPLES>) {
         print PACBIO "$array[2]\n$array[3]\n$array[4]\n";
         close PACBIO;
 	if($array[2]=~/(.*)\/Analysis_Results\/.*/){
-system("tree --charset X $1 -o $out/result/IsoSeq/$array[0]/$array[0]_$array[1]/PacBio_rawdata.$i.txt");
-system("mogrify -format png -density 1024x1024 -trim $out/result/IsoSeq/$array[0]/$array[0]_$array[1]/PacBio_rawdata.$i.txt");
-}
+		system("tree --charset X $1 -o $out/result/IsoSeq/$array[0]/$array[0]_$array[1]/PacBio_rawdata.$i.txt");
+		system("mogrify -format png -density 1024x1024 -trim $out/result/IsoSeq/$array[0]/$array[0]_$array[1]/PacBio_rawdata.$i.txt");
+	}
 }
 close SAMPLES;
 close OUT;
 my %count;
 my @uniq = grep { ++$count{ $_ } < 2; } @part1;
-        open PACBIO, ">$infile.2";
-foreach $line(@uniq)
-{ 
+open PACBIO, ">$infile.2";
+foreach $line(@uniq){ 
         print PACBIO "$line\n";
        my @array = split /\t/, $line;
 	push @part2,$array[0];
 }
-        close PACBIO;
-        open PACBIO, ">$infile.3";
-my (%hash,$key,$value); foreach $line (@part2){$hash{$line}++;} while(($key, $value) = each(%hash)) {print PACBIO $key."\t".$value."\n";}
-        close PACBIO;
+close PACBIO;
+
+open PACBIO, ">$infile.3";
+my (%hash,$key,$value); 
+foreach $line (@part2){
+	$hash{$line}++;
+} 
+while(($key, $value) = each(%hash)) {
+	print PACBIO $key."\t".$value."\n";
+}
+close PACBIO;
 
 

@@ -56,7 +56,6 @@ mkdir("$dirname/work_sh") if (!-d "$dirname/work_sh");
 mkdir($foutdir) if (!-d $foutdir);
 mkdir($fmiddledir) if (!-d $fmiddledir);
 my $blast_parser = "$Bin/blast_parser.pl";
-my $blast_parser_n = "$Bin/blast_parser_blastn.pl";
 open TAB1,">$fshelldir/Covertm0_2Tabbest.sh" || die "$!";
 open TAB2,">$fshelldir/Covertm0_2Tab.sh" || die $!;
 
@@ -66,17 +65,19 @@ my $seq_file_name = basename("$blastm0files[0]");
 $seq_file_name =~ s/\.(\d+?)\.fa\.\S+//;
 foreach my $blastfile (sort @blastm0files) {
 	my $basename = basename($blastfile);
-	print TAB1 "perl $blast_parser -nohead -tophit 1 -m 0 -topmatch 1 $blastfile > $fmiddledir/$basename.tab.best &&\n" if ($blastfile!~/NT/);
-	print TAB2 "perl $blast_parser -nohead -tophit 50 -m 0 -topmatch 1 $blastfile > $fmiddledir/$basename.tab &&\n" if ($blastfile!~/NT/);
-	print TAB1 "perl $blast_parser_n -nohead -tophit 1 -m 0 -topmatch 1 $blastfile > $fmiddledir/$basename.tab.best &&\n" if ($blastfile=~/NT/);
-	print TAB2 "perl $blast_parser_n -nohead -tophit 50 -m 0 -topmatch 1 $blastfile > $fmiddledir/$basename.tab &&\n" if ($blastfile=~/NT/);
-	
+	if($blastfile=~/NT.blast/){
+		print TAB1 "perl $Bin/blast_parser_blastn.pl -nohead -tophit 1 -m 0 -topmatch 1 $blastfile > $fmiddledir/$basename.tab.best && \n";
+		print TAB2 "perl $Bin/blast_parser_blastn.pl -nohead -tophit 50 -m 0 -topmatch 1 $blastfile > $fmiddledir/$basename.tab &&\n" ;
+	}else{
+		print TAB1 "perl $blast_parser -nohead -tophit 1 -m 0 -topmatch 1 $blastfile > $fmiddledir/$basename.tab.best &&\n" ;
+		print TAB2 "perl $blast_parser -nohead -tophit 50 -m 0 -topmatch 1 $blastfile > $fmiddledir/$basename.tab &&\n" ;
+	}
 }
 close TAB1;
 close TAB2;
 
-&Cut_shell_qsub("$fshelldir/Covertm0_2Tabbest.sh",$Cpu,"1G","all.q");
-&Cut_shell_qsub("$fshelldir/Covertm0_2Tab.sh",$Cpu,"1G","all.q");
+&Cut_shell_qsub("$fshelldir/Covertm0_2Tabbest.sh",$Cpu,"1G","scr.q,all.q");
+&Cut_shell_qsub("$fshelldir/Covertm0_2Tab.sh",$Cpu,"1G","scr.q,all.q");
 
 ############## Convert format tab #########
 my @blastm7files=glob("$findir/*.blast.xml");
@@ -96,10 +97,11 @@ foreach my $blastfile (sort @blastm7files) {
 close TAB3;
 close TAB4;
 
-&Cut_shell_qsub("$fshelldir/Covertm7_2Tabbest.sh",$Cpu,"1G","all.q");
-&Cut_shell_qsub("$fshelldir/Covertm7_2Tab.sh",$Cpu,"1G","all.q");
+&Cut_shell_qsub("$fshelldir/Covertm7_2Tabbest.sh",$Cpu,"1G","scr.q,all.q");
+&Cut_shell_qsub("$fshelldir/Covertm7_2Tab.sh",$Cpu,"1G","scr.q,all.q");
 
 ############ Cat Tab OUT #####################
+my @files=();
 if (defined $Nr) {
 	system("cat $fmiddledir/*.NR.blast.tab.best >$foutdir/$seq_file_name.NR.blast.tab.best");
 	system("cat $fmiddledir/*.NR.blast.tab >$foutdir/$seq_file_name.NR.blast.tab");
@@ -109,20 +111,44 @@ if(defined $Nt){
 	system("cat $fmiddledir/*.NT.blast.tab >$foutdir/$seq_file_name.NT.blast.tab");
 }
 if(defined $Swissprot){
-	system("cat $fmiddledir/*.Swissprot.blast.tab.best >$foutdir/$seq_file_name.Swissprot.blast.tab.best");
-	system("cat $fmiddledir/*.Swissprot.blast.tab >$foutdir/$seq_file_name.Swissprot.blast.tab");
+	@files=glob("$fmiddledir/*.Swissprot.blast.tab.best");
+	if (scalar @files) {
+		system("cat $fmiddledir/*.Swissprot.blast.tab.best >$foutdir/$seq_file_name.Swissprot.blast.tab.best");
+		system("cat $fmiddledir/*.Swissprot.blast.tab >$foutdir/$seq_file_name.Swissprot.blast.tab");
+	}else{
+		system("cat $findir/*.Swissprot.blast.tab >$foutdir/$seq_file_name.Swissprot.blast.tab");
+		system("perl -ane 'print if ++\$hash{ \$F[0] }<2' $foutdir/$seq_file_name.Swissprot.blast.tab >$foutdir/$seq_file_name.Swissprot.blast.tab.best");
+	}
 }
 if(defined $TrEMBL ){
-	system("cat $fmiddledir/*.TrEMBL.blast.tab.best >$foutdir/$seq_file_name.TrEMBL.blast.tab.best");
-	system("cat $fmiddledir/*.TrEMBL.blast.tab >$foutdir/$seq_file_name.TrEMBL.blast.tab");
+	@files=glob("$fmiddledir/*.TrEMBL.blast.tab.best");
+	if (scalar @files) {
+		system("cat $fmiddledir/*.TrEMBL.blast.tab.best >$foutdir/$seq_file_name.TrEMBL.blast.tab.best");
+		system("cat $fmiddledir/*.TrEMBL.blast.tab >$foutdir/$seq_file_name.TrEMBL.blast.tab");
+	}else{
+		system("cat $findir/*.TrEMBL.blast.tab >$foutdir/$seq_file_name.TrEMBL.blast.tab");
+		system("perl -ane 'print if ++\$hash{ \$F[0] }<2' $foutdir/$seq_file_name.TrEMBL.blast.tab >$foutdir/$seq_file_name.TrEMBL.blast.tab.best");
+	}
 }
 if(defined $Cog ){
-	system("cat $fmiddledir/*.COG.blast.tab.best >$foutdir/$seq_file_name.COG.blast.tab.best");
-	system("cat $fmiddledir/*.COG.blast.tab >$foutdir/$seq_file_name.COG.blast.tab");
+	@files=glob("$fmiddledir/*.COG.blast.tab.best");
+	if (scalar @files) {
+		system("cat $fmiddledir/*.COG.blast.tab.best >$foutdir/$seq_file_name.COG.blast.tab.best");
+		system("cat $fmiddledir/*.COG.blast.tab >$foutdir/$seq_file_name.COG.blast.tab");
+	}else{
+		system("cat $findir/*.COG.blast.tab >$foutdir/$seq_file_name.COG.blast.tab");
+		system("perl -ane 'print if ++\$hash{ \$F[0] }<2' $foutdir/$seq_file_name.COG.blast.tab >$foutdir/$seq_file_name.COG.blast.tab.best");
+	}
 }
 if(defined $Kog ){
-	system("cat $fmiddledir/*.KOG.blast.tab.best >$foutdir/$seq_file_name.KOG.blast.tab.best");
-	system("cat $fmiddledir/*.KOG.blast.tab >$foutdir/$seq_file_name.KOG.blast.tab");
+	@files=glob("$fmiddledir/*.KOG.blast.tab.best");
+	if (scalar @files) {
+		system("cat $fmiddledir/*.KOG.blast.tab.best >$foutdir/$seq_file_name.KOG.blast.tab.best");
+		system("cat $fmiddledir/*.KOG.blast.tab >$foutdir/$seq_file_name.KOG.blast.tab");
+	}else{
+		system("cat $findir/*.KOG.blast.tab >$foutdir/$seq_file_name.KOG.blast.tab");
+		system("perl -ane 'print if ++\$hash{ \$F[0] }<2' $foutdir/$seq_file_name.KOG.blast.tab >$foutdir/$seq_file_name.KOG.blast.tab.best");
+	}
 }
 if(defined $Kegg ){
 #	system("cat $fmiddledir/*.KEGG.blast.tab.best >$foutdir/$seq_file_name.KEGG.blast.tab.best");

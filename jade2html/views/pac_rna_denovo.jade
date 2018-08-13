@@ -96,12 +96,12 @@ block content
 					span=info.data
 				+my_table(ob.PacBio_sample)
 				div 注：
-				div Polymerase Read Bases：原始数据量（过滤前/过滤后）
-				div Polymerase Reads：Polymerase reads条数（过滤前/过滤后）
-				div Polymerase Read N50：Polymerase Read N50长度（过滤前/过滤后）
-				div Polymerase Read Length：Polymerase Read 平均长度（过滤前/过滤后）
-				div Polymerase Read Quality：Polymerase Read质量（过滤前/过滤后）
-				div 数据路径：/result/primary/IsoSeq/PacBio_sample.xls
+				div Polymerase Read Bases：原始数据量（过滤后）
+				div Polymerase Reads：Polymerase reads条数（过滤后）
+				div Polymerase Read N50：Polymerase Read N50长度（过滤后）
+				div Polymerase Read Length：Polymerase Read 平均长度（过滤后）
+				div Polymerase Read Quality：Polymerase Read质量（过滤后）
+				div 数据路径：/result/IsoSeq/PacBio_sample.xls
 				h2#result 4 生物信息分析
 				p PacBio Sequel测序平台对不同长度的cDNA文库进行测序，得到大量的下机数据，称为Raw reads。我们首先对Raw reads进行质控和过滤，去除低质量和读长较短的reads。过滤后的reads通过分类、聚类和矫正获得全长转录本；由于全长转录本聚类较为严格，为了去除冗余的转录本，采用CD-HIT软件对全长转录本去冗余。得到非冗余的全长转录本后，可以对全长转录本进行编码区（CDS）的预测、简单序列重复(Simple Sequence Repeats , SSR)预测、以及功能注释。此外，PacBio数据也可以结合二代的转录组数据进行转录本定量分析，转录本差异分析，以及功能富集分析等等。详细的信息分析流程图如下：
 				.center
@@ -109,14 +109,14 @@ block content
 						img(src="html/img/pipeline.png",style="width:30%")
 					h6  信息分析流程
 				h3#r1 4.1 原始数据说明
-				p Pacbio RSII每个SMRT cell下机数据的目录结构如下：
-				+my_carousel(ob.PacBio_rawdata,"carousel1","width:40%")
-				//.center
-				//	a(href="html/img/rsii.png",class="lightbox")
-				//		img(src="html/img/rsii.png",style="width:40%")
-				div 注：xml文件主要包括数据的基本信息，包括所使用的酶和化学试剂信息、样品名称等信息；bas.h5和bax.h5都是HDF5格式的文件，HDF5是用于存储和分发科学数据的一种自我描述、多对象、层次结构的文件格式。bas.h5文件包含三个bax.h5文件描述信息，bax.h5中包含的信息有零模波导孔（ZMW）的坐标及分类、ZMW小孔碱基识别及其质量值、接头（adapter）的起始和结束位置、高质量区域的起始和结束位置、脉冲宽度和脉冲持续时间等。Fasta 和Fastq文件存放测序子读段（subreads）的序列信息，Fastq中还包含对应>碱基的质量值。Pacbio Sequel测序数据以bam的格式存储，RSII测序数据以h5的格式存储。
+				p Pacbio Sequel测序平台每个SMRT cell下机数据的目录结构如下：
+				//+my_carousel(ob.PacBio_rawdata,"carousel1","width:40%")
+				.center
+					a(href="html/img/PacBio_rawdata.png",class="lightbox")
+						img(src="html/img/PacBio_rawdata.png",style="width:40%")
+				div 注：subreadset.xml文件主要包括数据的基本信息，包括所使用的酶和化学试剂信息、样品名称等信息；Pacbio Sequel测序数据以bam的格式存储。
 				// div 格式说明请参考：<a href="https://github.com/PacificBiosciences/SMRT-Analysis/wiki/Data-files-you-received-from-your-service-provider">https://github.com/PacificBiosciences/SMRT-Analysis/wiki/Data-files-you-received-from-your-service-provider</a>
-				div 数据路径：/result/primary/IsoSeq/*/*/results/PacBio_rawdata.1.png
+				// div 数据路径：/result/IsoSeq/*/PacBio_rawdata.png
 				h3#r2 4.2 术语解释
 				p PacBio平台构建的文库形状是一个类似哑铃（“套马环”）的结构，称为SMRT bell文库，中间是测序片段，两端是环状的测序接头； SMRT Cell的每个零模波导孔测序得到环形一致读段（CCS）的过程如下图：
 				.center
@@ -140,39 +140,40 @@ block content
 				.col-xs-4
 					+my_carousel(ob.roi_readlength_hist,"carousel2","width:90%")
 					h6.center  ROI的长度分布图
-					div 数据路径：/result/primary/IsoSeq/*/*/results/*roi_readlength_hist.png
+					div 数据路径：/result/IsoSeq/*/*/roi_readlength_hist.png
 				.col-xs-4
 					+my_carousel(ob.roi_accuracy_hist,"carousel3","width:90%")
 					h6.center  ROI的质量分布图
-					div 数据路径：/result/primary/IsoSeq/*/*/results/*roi_accuracy_hist.png
+					div 数据路径：/result/IsoSeq/*/*/roi_accuracy_hist
 				.col-xs-4
 					+my_carousel(ob.roi_npasses_histl4,"carousel4","width:90%")
 					h6.center  ROI的完整读段数分布图
-					div 数据路径：/result/primary/IsoSeq/*/*/results/*roi_npasses_hist.png
+					div 数据路径：/result/IsoSeq/*/*/roi_npasses_hist
 				//.col-xs-12
 				//	+my_carousel(ob.roi_length_density,"carousel5","width:40%")
 				//	h6.center  ROI长度的密度分布图
-				//	div 数据路径：/result/primary/IsoSeq/*/*roi_length_density.png
+				//	div 数据路径：/result/IsoSeq/*/*roi_length_density.png
 				div(class="clearfix")
 				br
 				p ROI的长度分布与构建的cDNA文库片段的大小有关，建库时，cDNA文库片段越长，产生的ROI长度也就越长。ROI的质量分布图反映了序列的准确性，通常情况下，我们会筛选准确性大于0.75的ROI进行后续分析。完整读段数可以反映每个零模波导孔的测序深度，完整读段数越多，测序读长越长，序列的准确性可能就越高。
 				.col-xs-12
 					+my_carousel(ob.roi_length_density,"carousel5","width:50%")
 					h6.center  ROI长度的密度分布图
-					div 数据路径：/result/primary/IsoSeq/*/*roi_length_density.png
+					div 数据路径：/result/IsoSeq/*/*roi_length_density.png
 				div(class="clearfix")
 				br
 				p ROI详细信息统计结果如下表：
 				+my_table(ob.reads_of_insert_report)
-				div 注：Samples：样品名称；
+				div 注：Samples：样品名称； 
 				div cDNA Size：建库时插入片段大小；
-				div Reads of Insert：ROI数目；
-				div Read Bases of Insert：ROI总碱基数；
-				div Mean Read Length of Insert：ROI序列的平均长度；
-				div Mean Read Quality of Insert：RoI序列的平均质量值；
+				div Reads of Insert：ROI数目； 
+				div Read Bases of Insert：ROI总碱基数； 
+				div Mean Read Length of Insert：ROI序列的平均长度； 
+				div Mean Read Quality of Insert：RoI序列的平均质量值； 
 				div Mean Number of Passes：ROI的平均完整读段数。
-				div 数据路径：/result/primary/IsoSeq/*/*roi_stat.xls
-
+				div 结果路径：/result/IsoSeq/*/*roi_stat.xls
+				div 插入片段序列:/result/IsoSeq/*/read_of_insert.fasta
+				
 				h3#r4 4.4 转录本的分类和聚类
 				p 获得高质量全长转录本是通过SMRT analysis分析软件中IsoSeq标准化流程实现的。对于上一步获得的ROI, 按照是否含有3´引物和5´引物，及3´引物前是否含有polyA尾将ROI分为全长转录本和非全长转录本；按照序列内部有无测序引物将ROI分为嵌合转录本和非嵌合转录本；对ROI分类后，取全长非嵌合的转录本进行聚类，去掉一部分冗余的转录本; 为了提高序列的准确性，聚类后的全长非嵌合转录本可以用非全长非嵌合的转录本进行序列矫正，最终获得高质量的全长转录本和低质量的全长转录本。详细的分析流程如下图：
 				.center
@@ -181,7 +182,7 @@ block content
 					h6  转录本分类和聚类流程图
 				p 对ROI进行分类，得到全长非嵌合转录本和非全长非嵌合转录本，详细的统计信息如下表：
 				+my_table(ob.classify_summary_t)
-				div 注：cDNA Size：建库时插入片段大小；
+				div 注：cDNA Size：建库时插入片段大小； 
 				div Reads of Insert：ROI数目；
 				div Number of five prime reads：含有5'段引物的ROI数目；
 				div Number of three prime reads：含有3'段引物的ROI数目；
@@ -192,15 +193,15 @@ block content
 				div Number of full-length non-chimeric reads：全长非嵌合ROI数目；
 				div Full-Length Percentage（FL%）：全长ROI所占的百分比；
 				div Average full-lengthnon-chimeric read length：全长非嵌合ROI的平均长度。
-				div 数据路径：/result/primary/IsoSeq/*/*classify_stat.xls
+				div 数据路径：/result/IsoSeq/*/*classify_stat.xls
 				//+my_carousel(ob.flnc_length_density,"carousel6","width:40%")
 				//h6.center  全长非嵌合转录本长度的密度分布图
-				//div 数据路径：/result/primary/IsoSeq/*/*flnc_length_density.png
+				//div 数据路径：/result/IsoSeq/*/*flnc_length_density.png
 				br
 				p 通常情况下，全长转录本的长度分布和数目可以反映cDNA文库构建的情况以及测序质量的好坏。ROI分类后的全长转录本长度分布应与建库大小相一致，片段越长的文库获得的全长转录本就越长。此外，全长转录本占ROI的比例与文库类型也有关，通常情况下，1-2k文库中所占的比例在50%-70%，3-5k文库中所占的比例在30%左右。
 				+my_carousel(ob.flnc_length_density,"carousel6","width:50%")
 				h6.center  全长非嵌合转录本长度的密度分布图
-				div 数据路径：/result/primary/IsoSeq/*/*flnc_length_density.png
+				div 结果路径：/result/IsoSeq/*/*flnc_length_density.png
 				br
 				p 各类ROI所占百分比情况如下图：
 				+my_carousel(ob.classify_summary,"carousel7","width:40%")
@@ -209,31 +210,41 @@ block content
 				div full-length non-chimeric reads：全长非嵌合ROI；
 				div full-length chimeric reads：全长嵌合ROI数目；
 				div filtered short reads: 过滤掉的短片段的ROI
-				div 数据路径：/result/primary/IsoSeq/*/*/results/*classify_summary.png
+				div 数据路径：/result/IsoSeq/*/*/classify_summary.png
 				br
 				p 获得全长非嵌合转录本后，由于单个cDNA文库的全长非嵌合转录本中可能存在很多重复的转录本，我们需要对转录本进行去冗余。通过ICE（isoform-level clustering algorithm）算法对全长转录本序列进行迭代聚类，将相似的序列聚类到一簇cluster，每簇得到一个一致转录本。结合非全长转录本，使用矫正（polish）程序对每簇的一致序列进行矫正，得到准确度大于99%的高质量转录本（high-quality isoforms），和低质量转录本（low-quality isoforms）。详细的统计结果见下表：
 				+my_table(ob.cluster_summary)
-				div 注：cDNA Size：建库时插入片段大小；
-				div Number of consensus isoforms：ICE聚类得到的一致转录本序列数目；
-				div Average consensus isoforms length：一致转录本序列平均长度；
+				div 注：cDNA Size：建库时插入片段大小； 
+				div Number of consensus isoforms：ICE聚类得到的一致转录本序列数目； 
+				div Average consensus isoforms length：一致转录本序列平均长度； 
 				div Number of polished high-quality isoforms：经矫正后的高质量（准确度>0.99）一致转录本数目；
 				div Number of polished low-quality isoforms：经矫正后的低质量（准确度<0.99）一致转录本数目。
-				div 数据路径：/result/primary/IsoSeq/*/*cluster_stat.xls
+				div 数据路径：/result/IsoSeq/*/*cluster_stat.xls
 				+my_carousel(ob.consensus_length_density,"carousel8","width:50%")
 				h6.center  一致性转录本长度的密度分布图
-				div 数据路径：/result/primary/IsoSeq/*/*consensus_length_density.png
+				div 数据路径：/result/IsoSeq/*/*consensus_length_density.png
+				h6 结果文件：
+				p 全长非嵌合转录本序列：/result/IsoSeq/*/*/*flnc.fa
+				p 非全长转录本序列：/result/IsoSeq/*/*/*nfl.fa
+				p 聚类后一致性序列：/result/IsoSeq/*/*/consensus_isoforms.fa
+				p 高质量全长转录本序列：/result/IsoSeq/*/*/*high_qv_consensus_isforms.fa
+				p 低质量全长转录本序列：/result/IsoSeq/*/*/*low_qv_consensus_isoforms.fa
 				br
-				p 此外，将不同长度cDNA文库的低质量的一致转录本用二代转录组测序的短读长进行LSC序列矫正，进一步获得高质量的一致转录本。 最后，将经LSC矫正的一致转录本和不同长度cDNA文库的高质量的一致转录本进行合并，即为该样品的高质量全长转录本。
+				p 此外，将不同长度cDNA文库的低质量的一致转录本用二代转录组测序的短读长进行LSC序列矫正，进一步获得高质量的一致转录本。 最后，将经LSC矫正的一致转录本和不同长度cDNA文库的高质量的一致转录>本进行合并，即为该样品的高质量全长转录本。
+				div 该样品的高质量全长转录本：/result/CD-hit-est/*/*_all_high_qv_consensus_isoforms.fasta
 				h3#r5 4.5 全长转录本去冗余
 				p 由于IsoSeq流程中获得高质量全长转录本的聚类过程参数设置较严格，同一转录本的多拷贝序列被分到不同簇的可能性较大，会产生一些冗余的序列；此外，同一样品不同文库间的高质量全长转录本也有一定的重叠。因此，我们采用CD-HIT软件对高质量全长转录本进一步去冗余 (参数：c= 0.99 、T =6 、G=1，U=10、s=0.999 、d=40 、p=1)，去冗余后得到非冗余的高质量转录本。
-				div 数据路径：/result/primary/CD-hit-est/*/CD-hit-est.fasta
+				div 非冗余高质量转录本：/result/CD-hit-est/*/CD-hit-est.fasta
 				h3#r6 4.6 CDS预测
 				p 基于序列上的翻译阅读框，我们采用TransDecoder软件对去冗余后的高质量全长转录本进行CDS预测。TransDecoder计算并比较6个翻译框的编码可能性值（coding likelihood score），找出能编码100个氨基酸以上的CDS；当翻译框的编码可能性值较低时，还可以根据同已知蛋白数据库（Pfam、SwissProt）的同源搜索结果作为保留翻译框的依据。预测的CDS的序列名有四个字段，如下：
 				p >RS2_above3k_1:98-3451(+) ORF type:complete len:1118
 				div 注：字段一：>转录本名:翻译框对应转录本或互补链上碱基位置，是CDS的唯一识别符；
 				div 字段三：CDS的序列类型，分为complete、5prime_partial、3prime_partial、internal四种；
 				div 字段四：CDS的碱基长度。
-				div 数据路径：/result/primary/Transdecoder/*/transdecoder.cds.txt 
+				div 结果文件：
+				p 预测的CDS序列：/result/Transdecoder/*/UniIso.fa.transdecoder.cds.fa
+				p 与pfam数据库和Swissprot蛋白数据库比对后的gff文件：/result/Transdecoder/*/transdecoder.gff3
+				p 预测CDS区编码的氨基酸序列：/result/Transdecoder/*/transdecoder.pep.fa
 				h3#r7 4.7 转录本注释
 				h4 4.7.1 NT/NR/Swiss-Prot/GO/KEGG/KOG注释
 				p 为了得到全长转录本的功能信息，我们将高质量的全长转录本序列分别与NT、NR、Swissprot等数据库进行比对，从而得到全长转录本的注释信息,其中各类数据库简介如下：
@@ -244,29 +255,29 @@ block content
 				p KEGG是一类系统分析基因产物和化合物在细胞中的代谢途径以及这些基因产物的功能的数据库。它整合了基因组、化学分子和生化系统等方面的数据,包括代谢通路（KEGG PATHWAY）、药物（KEGG DRUG）、疾病（KEGG DISEASE）、功能模型（KEGG MODULE）、基因序列（KEGG GENES）及基因组（KEGG GENOME）等等。详见 <a href="http://www.genome.jp/kegg/">http://www.genome.jp/kegg/</a>。
 				p KOG即“同源蛋白簇”。构成每个KOG的蛋白都是被假定为来自于一个祖先蛋白，并且因此或者是orthologs或者是paralogs。Orthologs是指来自于不同物种的由垂直家系（物种形成）进化而来的蛋白，并且典型的保留与原始蛋白有相同的功能。Paralogs是那些在一定物种中的来源于基因复制的蛋白，可能会进化出新的与原来有关的功能。
 				+my_table(ob.Function_Annotation)
-				div 数据路径：/result/primary/Annotation/*/Function_Annotation.stat.xls
+				div 数据路径：/result/Annotation/*/Function_Annotation.stat.xls
 				br
 				p 上表为注释信息统计，同一转录本可能注释到不同的数据库中，当转录本同时注释到三个及三个以上不同的数据库时，体现转录本的注释的准确性。下图为转录本同时注释到不同数据库的比例。
 				+my_carousel(ob.venn,"carousel9","width:40%")
 				h6.center  转录本注释维恩图 
-				div 数据路径：/result/primary/Annotation/*/Anno_Venn.png
+				div 数据路径：/result/Annotation/*/Anno_Venn.png
 				h4 4.7.2 GO分类
 				p GO分为三大类ontology：生物过程（Biological Process）、分子功能（Molecular Function）和细胞组分(Cellular Component)，分别用来描述基因编码的产物所参与的生物过程、所具有的分子功能及所处的细胞环境。GO的基本单元是term，每个term有一个唯一的标示符（由“GO:”加上7个数字组成，例如GO:0072669）；每类ontology的term通过它们之间的联系，构成一个有向无环的拓扑结构。详见 <a href="http://www.geneontology.org">http://www.geneontology.org/</a>。对全长转录本进行GO的注释，获得每个转录本的GO信息，并对其进行二级分类统计。如下图，图形反映了基因数目在GO注释中的分布情况。
 				+my_carousel(ob.go,"carousel10","width:60%")
 				h6.center  GO注释二级分类统计图 
-				div 数据路径：/result/primary/Annotation/*/GO/GO_classification_bar.png
+				div 数据路径：/result/Annotation/*/GO/GO_classification_bar.png
 				h4 4.7.3 KOG或COG 分类
 				p KOG/COG都是NCBI基于基因直系同源关系的分类数据库，其中COG针对原核生物，KOG针对真核生物。COG/KOG结合进化关系将来自不同物种的同源基因分为不同的Ortholog簇，目前COG有4873个分类，KOG有4852个分类。来自同一Ortholog的基因具有相同的功能，这样就可以将功能注释直接继承给同一COG/KOG簇的其他成员。
 				+my_carousel(ob.kog,"carousel11","width:60%")
 				h6.center  KOG分类统计图 
-				div 数据路径：/result/primary/Annotation/*/KOG/UniIso.fa.KOG.class.png
+				div 数据路径：/result/Annotation/*/KOG/UniIso.fa.KOG.class.png
 				h4 4.7.4 KEGG Pathway分析
 				p KO（KEGG ORTHOLOG）系统将各个KEGG注释系统联系在一起，KEGG已建立了一套完整KO注释的系统，可完成新测序物种的基因组或转录组的功能注释。我们对KEGG PATHWAY 注释结果进行分类统计，结果如下表：
 				+my_short_table(ob.kegg)
 				div 注：Pathway Hierarchy1：KEGG PATHWAY的第一层分类；
 				div Pathway Hierarchy2：KEGG PATHWAY的第二层分类；
 				div Gene number：参与该pathway的转录本数目。
-				div 数据路径：/result/primary/Annotation/*/KEGG/KEGG_classification_count.txt
+				div 数据路径：/result/Annotation/*/KEGG/KEGG_classification_count.txt
 				br
 				p 对转录本做KO注释后，可根据它们参与的KEGG代谢通路进行分类，结果如下图：
 				+my_carousel(ob.KEGG_classification,"carousel12","width:60%")
@@ -276,7 +287,7 @@ block content
 				div C：Genetic Information Processing，遗传信息处理；
 				div D：Metabolism，代谢；
 				div E：Organismal Systems，有机系统。
-				div 数据路径：/result/primary/Annotation/*/KEGG/KEGG_classification.png
+				div 数据路径：/result/Annotation/*/KEGG/KEGG_classification.png
 				if ob.group.length
 					h3 4.8 基因家族预测
 					p 基因家族的概念主要有两种分类：(1)按功能划分，例如常用的CAZyme注释或者Pfam注释，会把一些功能类似的基因聚类，形成一个家族；(2)按照序列相似程度划分，将旁系同源的基因放在一起认为是一个家族，往往按序列相似性归为一个家族的基因在功能上有一定的相似或相关性，一般使用OrthoMCL进行聚类<sup>[13, 14]</sup>。
@@ -286,7 +297,7 @@ block content
 					div 注：Group_acc：基因家族的ID；
 					div # of Genes：基因家族的基因数；
 					div Genes：具体的基因ID。
-					div 数据路径：/result/primary/OrthoMCL/*/*.group.xls
+					div 数据路径：/result/OrthoMCL/*/*.group.xls
 				if ob.ssr_density.length
 					h3#r7 4.9 SSR预测
 					p 真核基因组中存在着大量的串联重复序列, 按重复单位的大小, 串联重复可分为卫星（重复序列>70bp）、小卫星（6-70bp）和微卫星DNA (1-6bp)。 微卫星是指基因组中以少数几个核苷酸(1-6bp) 为单位多次串联重复组成的长达几十个核苷酸的序列 ，又称简单序列重复(Simple Sequence Repeats , SSR)。SSR在群体中丰富的遗传多态性可以用于绘制遗传连锁图谱、分析连锁不平衡和分析遗传多态性等。我们采用MiSa结合Primer3对去冗余后的高质量转录本进行SSR预测，预测后的SSR密度图如下：
@@ -299,14 +310,14 @@ block content
 					div p5:5个碱基重复5次及5次以上；
 					div p6:6个碱基重复5次及5次以上，这样的碱基重复序列才算是微卫星序列。
 					div c:两个微卫星之间的距离小于100bp的时候，两个微卫星组成一个复合微卫星。
-					div 数据路径：/result/primary/SSR/*/ssr_density.png
+					div 数据路径：/result/SSR/*/ssr_density.png
 				if ob.lncRNA_length_cout.length
 					h3#r8 4.10 LncRNA预测
 					p 人们对长非编码RNA（Long noncoding RNA, LncRNA）的认识还处在初级阶段，LncRNA起初被认为是基因组转录的“噪音”，是RNA聚合酶II转录的副产物，不具有生物学功能。然而，近年来的研究表明，LncRNA参与了人X染色体沉默，基因组印记以及染色质修饰，转录激活，转录干扰，核内运输等多种重要的调控过程，LncRNA的这些调控作用也开始引起人们广泛的关注[15, 16]。哺乳动物基因组序列中4%~9%的序列产生的转录本是LncRNA（相应的蛋白编码RNA的比例是1%），虽然近年来关于LncRNA的研究进展迅猛，但是绝大部分的LncRNA的功能仍然是不清楚的。随着研究的推进，各类LncRNA的大量发现，LncRNA 的研究将是基因组研究非常吸引人的一个方向，使人们逐渐认识到基因组存在人类知之甚少的“暗物质”。
 					p LncRNAs通常大于200bp，具有mRNA样结构，经过剪接，具有polyA尾巴与启动子结构，分化过程中有动态的表达与不同的剪接方式。我们采用ncrna_pipeline软件对去冗余后的高质量转录本进行LncRNA预测，预测后的LncRNA的长度分布如下。
 					+my_carousel(ob.lncRNA_length_cout,"carousel14","width:40%")
 					h6.center  LncRNA长度分布图 
-					div 数据路径：/result/primary/LncRNA/*/lncRNA_length_cout.png
+					div 数据路径：/result/LncRNA/*/lncRNA_length_cout.png
 				h3#r10 4.8 高级信息分析
 				p 由于PacBio三代测序数据的错误率较高，二代转录组数据可以用来矫正三代获得的转录本序列，以提高序列的准确性；此外，三代转录本亦可以作为参考序列，结合二代数据对转录本进行定量，比较不同样品间转录本的差异表达，进而分析差异表达转录本所在通路的分类和功能。
 				h4 4.8.1 参考序列比对
@@ -315,7 +326,7 @@ block content
 				div 注：Total Reads: 过滤后clean reads的总量
 				div Uniq mapped reads(ratio)： 唯一比对上的reads数量(比例)
 				div Multi mapped Reads(ratio)： 多比对位点的reads数量(比例)
-				div 数据路径：/result/advanced/Expression_evaluation/Total_mapped.stat.xls
+				div 数据路径：/result/Expression_evaluation/Total_mapped.stat.xls
 				h4 4.8.2 表达水平分析
 				p 二代clean reads比对回三代参考序列后，利用RSEM1.2.15软件，计算出每个转录本在各个样本中的表达量FPKM值，FPKM表示每百万比对片段中比对到转录本每千个碱基的数量，FPKM法能消除基因长度和测序量差异对计算基因表达的影响，计算得到的转录本表达量可直接用于比较不同样品间的基因表达差异。
 				+my_short_table(ob.genes)
@@ -323,7 +334,7 @@ block content
 				div length： 该基因所产生的最长的转录本的长度
 				div count: 该基因的有效reads覆盖数
 				div FPKM： 该基因的表达量
-				div 数据路径：/result/advanced/Expression_evaluation/*/*TranscriptExp.xls
+				div 数据路径：/result/Expression_evaluation/*/*TranscriptExp.xls
 				h4 4.8.3 差异表达分析
 				p 转录本不同样本间或实验条件间的表达量存在差异，基于比对结果，利用edgeR软件分析转录本在各样本中的差异表达情况，计算出差异表达的Pvalue和FDR值，FDR是校正后的Pvalue，FDR值越小，表示基因表达差异越显著。当样品无生物学重复时，差异基因数目会偏多，为了控制假阳性率，需FDR值结合FoldChange来筛选差异基因，筛选条件为：FDR<0.001 & log2|FoldChange|>1。下图是过滤后筛选出的差异基因结果：
 				//.col-md-6
@@ -333,7 +344,7 @@ block content
 				//	div logCounts: count 为该基因的有效reads覆盖数，log2(Counts)
 				//	div 红色点：上调差异显著的基因
 				//	div 绿色点：下调差异显著的基因
-				//	div 数据路径：/result/advanced/Differential_expression/*.edgeR.DE_results.MA.png
+				//	div 数据路径：/result/Differential_expression/*.edgeR.DE_results.MA.png
 				.col-md-12
 					+my_carousel(ob.Volcano,"carousel15","width:40%")
 					h6.center  差异表达火山图 
@@ -341,36 +352,36 @@ block content
 					div FDR: False Discoverge Rate，即校正后的Pvalue，FDR值越小，表示基因表达差异越显著
 					div 红色点：上调差异显著的基因
 					div 绿色点：下调差异显著的基因
-					div 数据路径：/result/advanced/Differential_expression/result/*.edgeR.DE_results.Volcano.png
+					div 数据路径：/result/Differential_expression/*.edgeR.DE_results.Volcano.png
 				div(class="clearfix")
 				h4 4.8.4 差异表达热图分析
 				p 差异转录本聚类热图分析用于判断不同实验条件下差异转录本表达量的聚类模式。每个比较组合都会得到一个差异转录本集，将所有比较组合的差异转录本集的并集在不同样品中的FPKM值，用于层次聚类分析，以热图的方式展示差异表达转录本间及差异表达样本间的关系。如下图：
 				.col-md-12
 					+my_carousel(ob.heatmap,"carousel16","width:50%")
 					h6.center  差异表达基因聚类热图 
-					div 数据路径：/result/advanced/Differential_expression/*.genes_vs_samples_heatmap.png
+					div 数据路径：/result/Differential_expression/*.genes_vs_samples_heatmap.png
 				
 				div(class="clearfix")
 				h4 4.8.5 差异表达转录本GO富集分析
 				p 根据实验目的筛选出差异转录本后，研究差异表达转录本在 Gene Ontology 中的分布状况将阐明实验中样本差异在基因功能上的体现。统计被显著富集的各个GO term中的转录本数，以柱状图的形式展示。如下图：
 				+my_carousel(ob.GO_Term,"carousel17","width:60%")
 				h6.center  三个大类Top20 GO term富集图 
-				div 数据路径：/result/advanced/Differential_expression/GO/*_GO_Term.png
+				div 数据路径：/result/Differential_expression/GO/*_GO_Term.png
 				br
 				p topGO有向无环图（见下图）能直观展示差异转录本富集的GO term及其层级关系。有向无环图为差异转录本GO富集分析的结果图形化展示方式，分支代表包含关系，从上至下所定义的功能范围越来越具体。对GO三大分类（CC细胞成分，MF 分子功能，BP生物学过程）的每一类都取富集程度最高的前5位作为有向无环图的主节点，用方框表示，并通过包含关系将相关联的GO term一起展示，颜色的深浅代表富集程度，颜色越深代表富集程度越高。每个方框或圆圈代表一个GO term，放大方框中内容从上到下代表的含义依次为:GO term的id、GO的描述、 GO富集的Pvalue、该GO下差异转录本的数目/该GO下背景基因的数目，每组比较三张图（BP,CC,MF）。
 				+my_carousel(ob.SigOfNodes,"carousel18","width:40%")
 				h6.center  topGO有向无环图 
-				div 数据路径：/result/advanced/Differential_expression/GO/*_SigOfNodes.png
+				div 数据路径：/result/Differential_expression/GO/*_SigOfNodes.png
 				h4 4.8.6 差异表达转录本KEGG富集分析
 				p 在生物体内，不同基因相互协调行使其生物学功能，通过Pathway显著性富集能确定 差异表达转录本参与的最主要生化代谢途径和信号转导途径。KEGG（Kyoto Encyclopedia of Genes and Genomes）是有关Pathway的主要公共数据库。Pathway 显著性富集分析以KEGG Pathway为单位，应用超几何检验，找出与整个基因组背景相比， 在差异表达转录本中显著性富集的 Pathway。
 				+my_carousel(ob.pathway_enrichment,"carousel19","width:50%")
 				h6.center  差异基因KEGG富集柱状图 
-				div 数据路径：/result/advanced/Differential_expression/KEGG/*/pathway_enrichment.png
+				div 数据路径：/result/Differential_expression/KEGG/*_vs_*/pathway_enrichment.png
 				br
 				p 注释完成后使用KOBAS 2.0进行Pathway富集分析，将差异基因富集通路图展示出来，如下图所示，图中用红色标记好了基因所在，小方框代表蛋白，红色的小方框代表候选靶基因对应的蛋白，鼠标悬停于该节点，会弹出相应的靶基因id。点击各个节点，可以连接到KEGG官方数据库中各个KO的具体信息页。
 				+my_carousel(ob.KEGG_ko,"carousel20","width:35%")
 				h6.center  差异基因富集通路图
-				div 数据路径：/result/advanced/Differential_expression/KEGG/*/pathway_map
+				div 数据路径：/result/Differential_expression/KEGG/*_vs_*/pathway_map/
 				if ob.PCA.length
 					h3 4.12 个性化分析
 					h4 4.12.1 样品PCA分析
@@ -397,7 +408,7 @@ block content
 					p 1. 样本间的聚类分析
 					p 该图为基于欧几里得距离（Euclidean distance）获得的样本聚类树图，相对而言，用 PCA方法获得的样本聚类图可靠性更好（因为PCA法对高位数据进行降维处理，除去了数据中的噪声，能有利于发现数据固有的模式）。
 					.center
-						a(href="html/img/sampleClustering.png",class="lightbox")
+						a(href="html/img/sampleClustering.png",class="ligh得到同一基因的不用剪切类型图tbox")
 							img(src="html/img/sampleClustering.png",style="width:40%")
 					h6.center  样本聚类图 
 					//+my_carousel(ob.sampleClustering,"carousel21","width:40%")
@@ -426,11 +437,24 @@ block content
 					h6.center  共表达基因网络互作图 
 					//+my_carousel(ob.cytoscape_network,"carousel24","width:40%")
 					//div 数据路径：/result/Specific/WGCNA/cytoscape_network/
-				h3 4.11 可变剪切分析 （附加）
-				p 可变剪切(Alternative Splicing, AS)，是大多数真核生物细胞中普遍的一种基因表达方式。真核细胞的基因序列包含内含子(intron)与外显子(exon)，在基因转录成mRNA前体后内含子会被RNA剪切体移除，而外显子则保留于成熟mRNA中。一条未经剪切的RNA，可以具有多种外显子剪切形式，因此使得一个基因在不同时间、不同环境中可以翻译出不同的蛋白质，进而增加其生理状况下系统的复杂性或适应性。
+				if ob.AS.length
+					h3 4.11 可变剪切分析 （附加）
+					p 可变剪切(Alternative Splicing, AS)，是大多数真核生物细胞中普遍的一种基因表达方式。真核细胞的基因序列包含内含子(intron)与外显子(exon)，在基因转录成mRNA前体后内含子会被RNA剪切体移除，而外显子则保留于成熟mRNA中。一条未经剪切的RNA，可以具有多种外显子剪切形式，因此使得一个基因在不同时间、不同环境中可以翻译出不同的蛋白质，进而增加其生理状况下系统的复杂性或适应性。
+					p 常见的可变剪切可以分成6类：
+					p （1）外显子跳跃（Exon Skipping）
+					p （2）内含子保留（Intron Retention）
+					p （3）5'端可变剪接（Alternative 5' splice Site）
+					p （4）3'端可变剪接（Alternative 3' splice Site）
+					p （5）最后一个外显子可变剪接（Alternative Last Exon）
+					p （6）第一个外显子可变剪接（Alternative First Exon）
+					.center
+						a(href="html/img/alternative_splicing.png",class="lightbox")
+							img(src="html/img/alternative_splicing.png",style="width:50%")
+						h6 可变剪切类型图
+					我们使用去冗余的高质量转录本序列为参考，得到同一基因的不用剪切类型图
 					+my_carousel(ob.AS,"carousel25","width:50%")
-				h6.center 同一基因的不同剪切体
-				div 结果路径: /result/AS/result/*.png
+					h6.center 同一基因的不同剪切体
+					div 结果路径: /result/AS/result/*.png
 
 				h2#tail 5 所用软件及数据库
 				h3#t1 5.1 软件及工具

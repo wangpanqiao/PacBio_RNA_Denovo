@@ -1,0 +1,16 @@
+#!/share/public/software/R-3.3.3/bin/Rscript
+# coding=utf-8
+# Writer:         chaijingchao
+# Program Date:   2016.07.30
+args <- commandArgs(TRUE)
+slices <- as.numeric(c(args[1], args[2], args[3], args[4]))
+pct <- round(slices/sum(slices)*100, 2)
+lbls = c("filtered short reads", "non-full-length reads", "full-length non-chimeric reads", "full-length chimeric reads")
+lbls <- paste(lbls, pct) # add percents to labels
+lbls <- paste(lbls,"%",sep = "") # ad % to labels
+png(paste(args[5],"png",sep = "."), type = "cairo-png", width = 680, height = 500)
+pie(slices, labels = lbls, col = rainbow(length(lbls)))
+dev.off()
+pdf(paste(args[5],"pdf",sep = "."), width = 12)
+pie(slices, labels = lbls, col = rainbow(length(lbls)))
+dev.off()

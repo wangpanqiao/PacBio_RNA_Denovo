@@ -70,7 +70,7 @@ of the whole cluster.
 =head1 Usage
   
   perl qsub-sge.pl <jobs.txt>
-  --queue <str>     specify the queue to use, default scr.q,all.q
+  --queue <str>     specify the queue to use, default all.q
   --interval <num>  set interval time of checking by qstat, default 10 seconds
   --lines <num>     set number of lines to form a job, default 1
   --maxproc <num>   set the maximum number of process in queue, default 50
@@ -88,7 +88,7 @@ of the whole cluster.
   perl qsub-sge.pl ./work.sh
 
   2.work with user specifed options: (to select queue, set checking interval time, set number of lines in each job, and set number of maxmimun running jobs)
-  perl qsub-sge.pl --queue scr.q,all.q -interval 1 -lines 3 -maxjob 10  ./work.sh
+  perl qsub-sge.pl --queue all.q -interval 1 -lines 3 -maxjob 10  ./work.sh
 
   3.do not convert path because it is already absolute path (Note that errors may happen when convert local path to absolute path automatically)
   perl qsub-sge.pl --convert no ./work.sh
@@ -103,7 +103,7 @@ of the whole cluster.
   perl qsub-sge.pl --resource vf=1.9G ./work.sh
 
   7.recommend combination of usages for common applications (I think this will suit for 99% of all your work)
-  perl qsub-sge.pl --queue scr.q,all.q --resource vf=1.9G -maxjob 10 --reqsub ./work.sh
+  perl qsub-sge.pl --queue all.q --resource vf=1.9G -maxjob 10 --reqsub ./work.sh
 
 =cut
 
@@ -129,7 +129,7 @@ GetOptions(
 	"verbose"=>\$Verbose,
 	"help"=>\$Help
 );
-$Queue ||= "scr.q,all.q";
+$Queue ||= "all.q";
 $Interval ||= 1;
 $Lines ||= 1;
 $Maxproc ||=30;
